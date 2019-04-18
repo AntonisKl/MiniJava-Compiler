@@ -18,8 +18,10 @@ class Main {
 			MiniJavaParser parser = new MiniJavaParser(fis);
 			System.err.println("Program parsed successfully.");
 			SymbolTableVisitor eval = new SymbolTableVisitor(symbols);
+
 			Goal root = parser.Goal();
 			System.out.println(root.accept(eval, null));
+			System.out.println(symbols.toString());
 		} catch (ParseException ex) {
 			System.out.println(ex.getMessage());
 		} catch (FileNotFoundException ex) {
