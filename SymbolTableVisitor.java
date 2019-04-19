@@ -20,10 +20,10 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
    * f2 -> <EOF>
    */
    public String visit(Goal n, String[] argu) {
-      // String _ret=null;
-      n.f0.accept(this, null);
-      n.f1.accept(this, null);
-      // n.f2.accept(this, argu); EOF NOT NEEDED
+      String _ret=null;
+      n.f0.accept(this, argu);
+      n.f1.accept(this, argu);
+      n.f2.accept(this, argu); 
       return null;
    }
 
@@ -49,21 +49,26 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
     */
    public String visit(MainClass n, String[] argu) {
       String _ret = null;
+
       n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
+      String id1 = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
-      n.f5.accept(this, argu);
-      n.f6.accept(this, argu);
       n.f7.accept(this, argu);
       n.f8.accept(this, argu);
       n.f9.accept(this, argu);
       n.f10.accept(this, argu);
-      String id = n.f11.accept(this, argu);
+      n.f11.accept(this, argu);
       n.f12.accept(this, argu);
       n.f13.accept(this, argu);
-      n.f14.accept(this, new String[] { METHOD, id, CLASS, "main" });
+
+      String id2 = "main", type = "void";
+      symbols.classesMaps.put(id1, new ClassMaps());
+      symbols.classesMaps.get(id1).methodTypes.put(id2, type);
+      symbols.classesMaps.get(id1).methodVarTypes.put(id2, new HashMap<String, String>());
+
+      n.f14.accept(this, new String[] { METHOD, id2, CLASS, id1 });
       n.f15.accept(this, argu);
       n.f16.accept(this, argu);
       n.f17.accept(this, argu);
@@ -279,285 +284,285 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       return n.f0.toString();
    }
 
-   /**
-    * f0 -> Block()
-    *       | AssignmentStatement()
-    *       | ArrayAssignmentStatement()
-    *       | IfStatement()
-    *       | WhileStatement()
-    *       | PrintStatement()
-    */
-   public String visit(Statement n, String[] argu) {
-      return n.f0.accept(this, argu);
-   }
+   // /**
+   //  * f0 -> Block()
+   //  *       | AssignmentStatement()
+   //  *       | ArrayAssignmentStatement()
+   //  *       | IfStatement()
+   //  *       | WhileStatement()
+   //  *       | PrintStatement()
+   //  */
+   // public String visit(Statement n, String[] argu) {
+   //    return n.f0.accept(this, argu);
+   // }
 
-   /**
-    * f0 -> "{"
-    * f1 -> ( Statement() )*
-    * f2 -> "}"
-    */
-   public String visit(Block n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> "{"
+   //  * f1 -> ( Statement() )*
+   //  * f2 -> "}"
+   //  */
+   // public String visit(Block n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> Identifier()
-    * f1 -> "="
-    * f2 -> Expression()
-    * f3 -> ";"
-    */
-   public String visit(AssignmentStatement n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> Identifier()
+   //  * f1 -> "="
+   //  * f2 -> Expression()
+   //  * f3 -> ";"
+   //  */
+   // public String visit(AssignmentStatement n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    n.f3.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> Identifier()
-    * f1 -> "["
-    * f2 -> Expression()
-    * f3 -> "]"
-    * f4 -> "="
-    * f5 -> Expression()
-    * f6 -> ";"
-    */
-   public String visit(ArrayAssignmentStatement n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      n.f4.accept(this, argu);
-      n.f5.accept(this, argu);
-      n.f6.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> Identifier()
+   //  * f1 -> "["
+   //  * f2 -> Expression()
+   //  * f3 -> "]"
+   //  * f4 -> "="
+   //  * f5 -> Expression()
+   //  * f6 -> ";"
+   //  */
+   // public String visit(ArrayAssignmentStatement n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    n.f3.accept(this, argu);
+   //    n.f4.accept(this, argu);
+   //    n.f5.accept(this, argu);
+   //    n.f6.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> "if"
-    * f1 -> "("
-    * f2 -> Expression()
-    * f3 -> ")"
-    * f4 -> Statement()
-    * f5 -> "else"
-    * f6 -> Statement()
-    */
-   public String visit(IfStatement n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      n.f4.accept(this, argu);
-      n.f5.accept(this, argu);
-      n.f6.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> "if"
+   //  * f1 -> "("
+   //  * f2 -> Expression()
+   //  * f3 -> ")"
+   //  * f4 -> Statement()
+   //  * f5 -> "else"
+   //  * f6 -> Statement()
+   //  */
+   // public String visit(IfStatement n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    n.f3.accept(this, argu);
+   //    n.f4.accept(this, argu);
+   //    n.f5.accept(this, argu);
+   //    n.f6.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> "while"
-    * f1 -> "("
-    * f2 -> Expression()
-    * f3 -> ")"
-    * f4 -> Statement()
-    */
-   public String visit(WhileStatement n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      n.f4.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> "while"
+   //  * f1 -> "("
+   //  * f2 -> Expression()
+   //  * f3 -> ")"
+   //  * f4 -> Statement()
+   //  */
+   // public String visit(WhileStatement n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    n.f3.accept(this, argu);
+   //    n.f4.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> "System.out.println"
-    * f1 -> "("
-    * f2 -> Expression()
-    * f3 -> ")"
-    * f4 -> ";"
-    */
-   public String visit(PrintStatement n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      n.f4.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> "System.out.println"
+   //  * f1 -> "("
+   //  * f2 -> Expression()
+   //  * f3 -> ")"
+   //  * f4 -> ";"
+   //  */
+   // public String visit(PrintStatement n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    n.f3.accept(this, argu);
+   //    n.f4.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> AndExpression()
-    *       | CompareExpression()
-    *       | PlusExpression()
-    *       | MinusExpression()
-    *       | TimesExpression()
-    *       | ArrayLookup()
-    *       | ArrayLength()
-    *       | MessageSend()
-    *       | Clause()
-    */
-   public String visit(Expression n, String[] argu) {
-      return n.f0.accept(this, argu);
-   }
+   // /**
+   //  * f0 -> AndExpression()
+   //  *       | CompareExpression()
+   //  *       | PlusExpression()
+   //  *       | MinusExpression()
+   //  *       | TimesExpression()
+   //  *       | ArrayLookup()
+   //  *       | ArrayLength()
+   //  *       | MessageSend()
+   //  *       | Clause()
+   //  */
+   // public String visit(Expression n, String[] argu) {
+   //    return n.f0.accept(this, argu);
+   // }
 
-   /**
-    * f0 -> Clause()
-    * f1 -> "&&"
-    * f2 -> Clause()
-    */
-   public String visit(AndExpression n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> Clause()
+   //  * f1 -> "&&"
+   //  * f2 -> Clause()
+   //  */
+   // public String visit(AndExpression n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "<"
-    * f2 -> PrimaryExpression()
-    */
-   public String visit(CompareExpression n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> PrimaryExpression()
+   //  * f1 -> "<"
+   //  * f2 -> PrimaryExpression()
+   //  */
+   // public String visit(CompareExpression n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "+"
-    * f2 -> PrimaryExpression()
-    */
-   public String visit(PlusExpression n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> PrimaryExpression()
+   //  * f1 -> "+"
+   //  * f2 -> PrimaryExpression()
+   //  */
+   // public String visit(PlusExpression n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "-"
-    * f2 -> PrimaryExpression()
-    */
-   public String visit(MinusExpression n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> PrimaryExpression()
+   //  * f1 -> "-"
+   //  * f2 -> PrimaryExpression()
+   //  */
+   // public String visit(MinusExpression n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "*"
-    * f2 -> PrimaryExpression()
-    */
-   public String visit(TimesExpression n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> PrimaryExpression()
+   //  * f1 -> "*"
+   //  * f2 -> PrimaryExpression()
+   //  */
+   // public String visit(TimesExpression n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "["
-    * f2 -> PrimaryExpression()
-    * f3 -> "]"
-    */
-   public String visit(ArrayLookup n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> PrimaryExpression()
+   //  * f1 -> "["
+   //  * f2 -> PrimaryExpression()
+   //  * f3 -> "]"
+   //  */
+   // public String visit(ArrayLookup n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    n.f3.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "."
-    * f2 -> "length"
-    */
-   public String visit(ArrayLength n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> PrimaryExpression()
+   //  * f1 -> "."
+   //  * f2 -> "length"
+   //  */
+   // public String visit(ArrayLength n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "."
-    * f2 -> Identifier()
-    * f3 -> "("
-    * f4 -> ( ExpressionList() )?
-    * f5 -> ")"
-    */
-   public String visit(MessageSend n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      n.f4.accept(this, argu);
-      n.f5.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> PrimaryExpression()
+   //  * f1 -> "."
+   //  * f2 -> Identifier()
+   //  * f3 -> "("
+   //  * f4 -> ( ExpressionList() )?
+   //  * f5 -> ")"
+   //  */
+   // public String visit(MessageSend n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    n.f3.accept(this, argu);
+   //    n.f4.accept(this, argu);
+   //    n.f5.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> Expression()
-    * f1 -> ExpressionTail()
-    */
-   public String visit(ExpressionList n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> Expression()
+   //  * f1 -> ExpressionTail()
+   //  */
+   // public String visit(ExpressionList n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> ( ExpressionTerm() )*
-    */
-   public String visit(ExpressionTail n, String[] argu) {
-      return n.f0.accept(this, argu);
-   }
+   // /**
+   //  * f0 -> ( ExpressionTerm() )*
+   //  */
+   // public String visit(ExpressionTail n, String[] argu) {
+   //    return n.f0.accept(this, argu);
+   // }
 
-   /**
-    * f0 -> ","
-    * f1 -> Expression()
-    */
-   public String visit(ExpressionTerm n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> ","
+   //  * f1 -> Expression()
+   //  */
+   // public String visit(ExpressionTerm n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> NotExpression()
-    *       | PrimaryExpression()
-    */
-   public String visit(Clause n, String[] argu) {
-      return n.f0.accept(this, argu);
-   }
+   // /**
+   //  * f0 -> NotExpression()
+   //  *       | PrimaryExpression()
+   //  */
+   // public String visit(Clause n, String[] argu) {
+   //    return n.f0.accept(this, argu);
+   // }
 
    /**
     * f0 -> IntegerLiteral()
@@ -570,29 +575,30 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
     *       | BracketExpression()
     */
    public String visit(PrimaryExpression n, String[] argu) {
+      // System.out.println("---------------------------------->" + n.f0.which);
       return n.f0.accept(this, argu);
    }
 
-   /**
-    * f0 -> <INTEGER_LITERAL>
-    */
-   public String visit(IntegerLiteral n, String[] argu) {
-      return n.f0.accept(this, argu);
-   }
+   // /**
+   //  * f0 -> <INTEGER_LITERAL>
+   //  */
+   // public String visit(IntegerLiteral n, String[] argu) {
+   //    return n.f0.accept(this, argu);
+   // }
 
-   /**
-    * f0 -> "true"
-    */
-   public String visit(TrueLiteral n, String[] argu) {
-      return n.f0.toString();
-   }
+   // /**
+   //  * f0 -> "true"
+   //  */
+   // public String visit(TrueLiteral n, String[] argu) {
+   //    return n.f0.toString();
+   // }
 
-   /**
-    * f0 -> "false"
-    */
-   public String visit(FalseLiteral n, String[] argu) {
-      return n.f0.toString();
-   }
+   // /**
+   //  * f0 -> "false"
+   //  */
+   // public String visit(FalseLiteral n, String[] argu) {
+   //    return n.f0.toString();
+   // }
 
    /**
     * f0 -> <IDENTIFIER>
@@ -602,68 +608,68 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       return n.f0.toString();
    }
 
-   /**
-    * f0 -> "this"
-    */
-   public String visit(ThisExpression n, String[] argu) {
-      return n.f0.toString();
-   }
+   // /**
+   //  * f0 -> "this"
+   //  */
+   // public String visit(ThisExpression n, String[] argu) {
+   //    return n.f0.toString();
+   // }
 
-   /**
-    * f0 -> "new"
-    * f1 -> "int"
-    * f2 -> "["
-    * f3 -> Expression()
-    * f4 -> "]"
-    */
-   public String visit(ArrayAllocationExpression n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      n.f4.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> "new"
+   //  * f1 -> "int"
+   //  * f2 -> "["
+   //  * f3 -> Expression()
+   //  * f4 -> "]"
+   //  */
+   // public String visit(ArrayAllocationExpression n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    n.f3.accept(this, argu);
+   //    n.f4.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> "new"
-    * f1 -> Identifier()
-    * f2 -> "("
-    * f3 -> ")"
-    */
-   public String visit(AllocationExpression n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> "new"
+   //  * f1 -> Identifier()
+   //  * f2 -> "("
+   //  * f3 -> ")"
+   //  */
+   // public String visit(AllocationExpression n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    n.f3.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> "!"
-    * f1 -> Clause()
-    */
-   public String visit(NotExpression n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> "!"
+   //  * f1 -> Clause()
+   //  */
+   // public String visit(NotExpression n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> "("
-    * f1 -> Expression()
-    * f2 -> ")"
-    */
-   public String visit(BracketExpression n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> "("
+   //  * f1 -> Expression()
+   //  * f2 -> ")"
+   //  */
+   // public String visit(BracketExpression n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    return _ret;
+   // }
 
    //     @OverrideO
 

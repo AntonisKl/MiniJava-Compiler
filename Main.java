@@ -22,6 +22,13 @@ class Main {
 			Goal root = parser.Goal();
 			System.out.println(root.accept(eval, null));
 			System.out.println(symbols.toString());
+
+			TypeCheckingVisitor typeCheck = new TypeCheckingVisitor(symbols);
+
+			// System.out.println(root.accept(typeCheck, null));
+
+			// System.out.println((new int[1]) < (new int[2]));
+			// System.out.println(t && 2);
 		} catch (ParseException ex) {
 			System.out.println(ex.getMessage());
 		} catch (FileNotFoundException ex) {

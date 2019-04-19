@@ -20,8 +20,8 @@ class ClassMaps {
 		// System.out.println("	Method varibale types:");
 		// System.out.println((new PrettyPrintingMap(methodVarTypes)).toString());
 
-		return "\n	Variable types:\n" + (new PrettyPrintingMap(varTypes)).toString() + "\n\n	Method types:\n"
-				+ (new PrettyPrintingMap(methodTypes)).toString() + "\n\n	Method varibale types:\n"
+		return "\n\tVariable types:\n\t" + (new PrettyPrintingMap(varTypes)).toString() + "\n\n	Method types:\n\t"
+				+ (new PrettyPrintingMap(methodTypes)).toString() + "\n\n\tMethod varibale types:\n\t"
 				+ (new PrettyPrintingMap(methodVarTypes)).toString() + "\n\n";
 	}
 }

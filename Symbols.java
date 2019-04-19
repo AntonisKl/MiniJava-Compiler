@@ -19,6 +19,6 @@ class Symbols {
 	//   System.out.println("Inheritances:");
 	//   System.out.println((new PrettyPrintingMap(inheritances)).toString());
 
-	  return "Classes' maps:\n" + (new PrettyPrintingMap(classesMaps)).toString() + "\n\nInheritances:\n" + (new PrettyPrintingMap(inheritances)).toString();
+	  return "Classes' maps:\n" + (new PrettyPrintingMap(classesMaps)).toString() + "\n\nInheritances:\n\t" + (new PrettyPrintingMap(inheritances)).toString();
 	}
 }
