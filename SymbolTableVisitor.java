@@ -2,6 +2,8 @@ import syntaxtree.*;
 import visitor.GJDepthFirst;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
 
@@ -185,6 +187,7 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
 
       symbols.classesMaps.get(argu[0]).methodTypes.put(id, type);
       symbols.classesMaps.get(argu[0]).methodVarTypes.put(id, new HashMap<String, String>());
+      symbols.classesMaps.get(argu[0]).methodParamTypes.put(id, new ArrayList<String>());
 
       n.f3.accept(this, argu);
       n.f4.accept(this, new String[] { METHOD, id, CLASS, argu[0] });
@@ -222,8 +225,14 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       String id = n.f1.accept(this, argu);
 
       Map<String, String> curVarTypes = symbols.classesMaps.get(argu[3]).methodVarTypes.get(argu[1]);
-      // curVarTypes.put(argu[1], new HashMap<String, String>());
       curVarTypes.put(id, type);
+
+      List<String> curParamTypes = symbols.classesMaps.get(argu[3]).methodParamTypes.get(argu[1]);
+      curParamTypes.add(type);
+      
+      // List<String> curParamTypes = symbols.classesMaps.get(argu[3]).methodParamTypes;
+      // curParamTypes.add(type);
+      
       //System.out.println("FORMAL PARAMETER VISIT -> " + curVarTypes.get(id));
 
       return _ret;

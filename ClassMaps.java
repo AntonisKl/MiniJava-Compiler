@@ -1,14 +1,18 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 class ClassMaps {
 	public Map<String, String> varTypes, methodTypes;
 	public Map<String, Map<String, String>> methodVarTypes;
+	public Map<String, List<String>> methodParamTypes;
 
 	public ClassMaps() {
 		varTypes = new HashMap<String, String>();
 		methodTypes = new HashMap<String, String>();
 		methodVarTypes = new HashMap<String, Map<String, String>>();
+		methodParamTypes = new HashMap<String, List<String>>();
 	}
 
 	@Override
@@ -22,6 +26,21 @@ class ClassMaps {
 
 		return "\n\tVariable types:\n\t" + (new PrettyPrintingMap(varTypes)).toString() + "\n\n	Method types:\n\t"
 				+ (new PrettyPrintingMap(methodTypes)).toString() + "\n\n\tMethod varibale types:\n\t"
-				+ (new PrettyPrintingMap(methodVarTypes)).toString() + "\n\n";
+				+ (new PrettyPrintingMap(methodVarTypes)).toString() + "\n\n\tMethod parameter types:\n\t"
+				+ (new PrettyPrintingMap(methodParamTypes)).toString() + "\n\n";
 	}
+
+	// private String listToString(List<String> list) {
+	// 	String retValue = "";
+
+		
+	// 	for (int i = 0; i < list.size(); i++) {
+	// 		if (i > 0) {
+	// 			retValue += ", ";
+	// 		}
+	// 		retValue += list.get(i);
+	// 	}
+
+	// 	return retValue;
+	// }
 }

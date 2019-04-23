@@ -12,6 +12,8 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    final static String INT = "int";
    final static String INT_ARRAY = "int[]";
 
+   int curMethodParamIndex;
+
    Symbols symbols;
 
    public TypeCheckingVisitor(Symbols symbols) {
@@ -76,26 +78,45 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    private String getExpType(String type1, String type2, String operationType, String lineInfo)
          throws TypeCheckingException {
 
+      String expType = INT;
       switch (operationType) {
       case "<":
+         expType = BOOLEAN;
       case "+":
       case "-":
       case "*":
          if (atLeastOneEquals(type1, type2, INT_ARRAY) || atLeastOneEquals(type1, type2, BOOLEAN))
-            throw new TypeCheckingException("Operation " + operationType + "is undefined for types " + type1 + ", "
+            throw new TypeCheckingException("Operation " + operationType + " is undefined for types " + type1 + ", "
                   + type2 + " -> Line: " + lineInfo);
+         break;
       case "&&":
+         expType = BOOLEAN;
          if (atLeastOneEquals(type1, type2, INT_ARRAY) || atLeastOneEquals(type1, type2, INT))
-            throw new TypeCheckingException("Operation " + operationType + "is undefined for types " + type1 + ", "
+            throw new TypeCheckingException("Operation " + operationType + " is undefined for types " + type1 + ", "
                   + type2 + " -> Line: " + lineInfo);
+         break;
       }
       // if ((operationType.equals("<") || operationType.equals(">"))
       //       && (type1.equals(INT_ARRAY) || type2.equals(INT_ARRAY) || type1.equals(BOOLEAN) || type2.equals(BOOLEAN)))
       //    throw new TypeCheckingException("Operation " + operationType + "is undefined for types " + type1 + ", " + type2
       //          + " -> Line: " + lineInfo);
 
-      return null; // will not happen
+      return expType;
    }
+
+   private void checkParamType(String paramType, String className, String methodName, String lineInfo)
+         throws TypeCheckingException {
+      // System.out.println("index: " + curMethodParamIndex + "class name: " + className + ", method name: " + methodName);
+      String curOriginalParamType = symbols.classesMaps.get(className).methodParamTypes.get(methodName)
+            .get(curMethodParamIndex);
+      if (!curOriginalParamType.equals(paramType)) {
+         throw new TypeCheckingException("Invalid parameter -> Line: " + lineInfo);
+      }
+
+      return;
+   }
+
+   // VISIT FUNCTIONS
 
    /**
    * f0 -> MainClass()
@@ -103,11 +124,11 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    * f2 -> <EOF>
    */
    public String visit(Goal n, String[] argu) {
-      // String _ret=null;
-      n.f0.accept(this, null);
-      n.f1.accept(this, null);
-      // n.f2.accept(this, argu); EOF NOT NEEDED
-      return null;
+      String _ret = null;
+      n.f0.accept(this, argu);
+      n.f1.accept(this, argu);
+      n.f2.accept(this, argu);
+      return _ret;
    }
 
    /**
@@ -238,31 +259,42 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    public String visit(MethodDeclaration n, String[] argu) { // argu[0]: class name
       String _ret = null;
       n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
+      // n.f1.accept(this, argu);
       String id = n.f2.accept(this, argu);
       n.f3.accept(this, argu);
-      n.f4.accept(this, argu);
+      // n.f4.accept(this, argu); // NOT NEEDED
       n.f5.accept(this, argu);
       n.f6.accept(this, argu);
       // n.f7.accept(this, argu);
       n.f8.accept(this, new String[] { METHOD, id, CLASS, argu[0] });
       n.f9.accept(this, argu);
-      n.f10.accept(this, new String[] { METHOD, id, CLASS, argu[0] });
+      String retType = n.f10.accept(this, new String[] { METHOD, id, CLASS, argu[0] });
+
       n.f11.accept(this, argu);
+
+      try {
+         if (!symbols.getMethodType(argu[0], id).equals(retType)) {
+            throw new TypeCheckingException("Invalid return expression type -> Line:" + n.f11.beginLine);
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f12.accept(this, argu);
       return _ret;
    }
 
-   /**
-    * f0 -> FormalParameter()
-    * f1 -> FormalParameterTail()
-    */
-   public String visit(FormalParameterList n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> FormalParameter()
+   //  * f1 -> FormalParameterTail()
+   //  */
+   // public String visit(FormalParameterList n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    return _ret;
+   // }
 
    // /**
    //  * f0 -> Type()
@@ -281,60 +313,60 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    //    return _ret;
    // }
 
-   /**
-    * f0 -> ( FormalParameterTerm() )*
-    */
-   public String visit(FormalParameterTail n, String[] argu) {
-      return n.f0.accept(this, argu);
-   }
+   // /**
+   //  * f0 -> ( FormalParameterTerm() )*
+   //  */
+   // public String visit(FormalParameterTail n, String[] argu) {
+   //    return n.f0.accept(this, argu);
+   // }
 
-   /**
-    * f0 -> ","
-    * f1 -> FormalParameter()
-    */
-   public String visit(FormalParameterTerm n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      return _ret;
-   }
+   // /**
+   //  * f0 -> ","
+   //  * f1 -> FormalParameter()
+   //  */
+   // public String visit(FormalParameterTerm n, String[] argu) {
+   //    String _ret = null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    return _ret;
+   // }
 
-   /**
-    * f0 -> ArrayType()
-    *       | BooleanType()
-    *       | IntegerType()
-    *       | Identifier()
-    */
-   public String visit(Type n, String[] argu) {
-      return n.f0.accept(this, argu);
-   }
+   // /**
+   //  * f0 -> ArrayType()
+   //  *       | BooleanType()
+   //  *       | IntegerType()
+   //  *       | Identifier()
+   //  */
+   // public String visit(Type n, String[] argu) {
+   //    return n.f0.accept(this, argu);
+   // }
 
-   /**
-    * f0 -> "int"
-    * f1 -> "["
-    * f2 -> "]"
-    */
-   public String visit(ArrayType n, String[] argu) {
-      //  String _ret=null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return n.f0.toString() + n.f1.toString() + n.f2.toString();
-   }
+   // /**
+   //  * f0 -> "int"
+   //  * f1 -> "["
+   //  * f2 -> "]"
+   //  */
+   // public String visit(ArrayType n, String[] argu) {
+   //    //  String _ret=null;
+   //    n.f0.accept(this, argu);
+   //    n.f1.accept(this, argu);
+   //    n.f2.accept(this, argu);
+   //    return n.f0.toString() + n.f1.toString() + n.f2.toString();
+   // }
 
-   /**
-    * f0 -> "boolean"
-    */
-   public String visit(BooleanType n, String[] argu) {
-      return n.f0.toString();
-   }
+   // /**
+   //  * f0 -> "boolean"
+   //  */
+   // public String visit(BooleanType n, String[] argu) {
+   //    return n.f0.toString();
+   // }
 
-   /**
-    * f0 -> "int"
-    */
-   public String visit(IntegerType n, String[] argu) {
-      return n.f0.toString();
-   }
+   // /**
+   //  * f0 -> "int"
+   //  */
+   // public String visit(IntegerType n, String[] argu) {
+   //    return n.f0.toString();
+   // }
 
    /**
     * f0 -> Block()
@@ -381,16 +413,28 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
 
       String id = n.f0.accept(this, argu);
 
-      String idType;
+      String idType = null;
       try {
          idType = getVarType(id, argu[3], argu[1], Integer.toString(n.f1.beginLine));
       } catch (TypeCheckingException e) {
+         e.printStackTrace();
          System.exit(1);
       }
 
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+      String expType = n.f2.accept(this, argu);
       n.f3.accept(this, argu);
+
+      try {
+         if (!expType.equals(idType)) {
+            throw new TypeCheckingException("Left and right parts of expression have different types -> Line: "
+                  + Integer.toString(n.f3.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       return _ret;
    }
 
@@ -406,20 +450,47 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    public String visit(ArrayAssignmentStatement n, String[] argu) {
       String _ret = null;
       String id = n.f0.accept(this, argu);
-      String idType;
+      n.f1.accept(this, argu);
+
+      String idType = null;
       try {
          idType = getVarType(id, argu[3], argu[1], Integer.toString(n.f1.beginLine));
+         if (!idType.equals(INT_ARRAY)) {
+            throw new TypeCheckingException("Left part of array assignment statement is not of type int array -> Line: "
+                  + Integer.toString(n.f1.beginLine));
+         }
       } catch (TypeCheckingException e) {
+         e.printStackTrace();
          System.exit(1);
       }
 
-      n.f1.accept(this, argu);
-
-      n.f2.accept(this, argu);
+      String expType = n.f2.accept(this, argu);
       n.f3.accept(this, argu);
+
+      try {
+         if (!expType.equals(INT)) {
+            throw new TypeCheckingException(
+                  "Identifier of array index is not of type int -> Line: " + Integer.toString(n.f3.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f4.accept(this, argu);
-      n.f5.accept(this, argu);
+      expType = n.f5.accept(this, argu);
       n.f6.accept(this, argu);
+
+      try {
+         if (!expType.equals(INT)) {
+            throw new TypeCheckingException(
+                  "Identifier of array index is not of type int -> Line: " + Integer.toString(n.f6.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       return _ret;
    }
 
@@ -436,8 +507,19 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       String _ret = null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+      String expType = n.f2.accept(this, argu);
       n.f3.accept(this, argu);
+
+      try {
+         if (!expType.equals(BOOLEAN)) {
+            throw new TypeCheckingException(
+                  "Expression of if statement is not of type boolean -> Line: " + Integer.toString(n.f3.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f4.accept(this, argu);
       n.f5.accept(this, argu);
       n.f6.accept(this, argu);
@@ -455,8 +537,19 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       String _ret = null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+      String expType = n.f2.accept(this, argu);
       n.f3.accept(this, argu);
+
+      try {
+         if (!expType.equals(BOOLEAN)) {
+            throw new TypeCheckingException(
+                  "Expression of while statement is not of type boolean -> Line: " + Integer.toString(n.f3.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f4.accept(this, argu);
       return _ret;
    }
@@ -499,10 +592,18 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     * f2 -> Clause()
     */
    public String visit(AndExpression n, String[] argu) {
-      n.f0.accept(this, argu);
+      String type1 = n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return BOOLEAN;
+      String type2 = n.f2.accept(this, argu);
+
+      String expType = null;
+      try {
+         expType = getExpType(type1, type2, n.f1.toString(), Integer.toString(n.f1.beginLine));
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+      return expType;
    }
 
    /**
@@ -512,15 +613,17 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     */
    public String visit(CompareExpression n, String[] argu) {
       String type1 = n.f0.accept(this, argu);
-      String operationType = n.f1.accept(this, argu);
+      n.f1.accept(this, argu);
       String type2 = n.f2.accept(this, argu);
 
+      String expType = null;
       try {
-         getExpType(type1, type2, operationType, Integer.toString(n.f1.beginLine));
+         expType = getExpType(type1, type2, n.f1.toString(), Integer.toString(n.f1.beginLine));
       } catch (TypeCheckingException e) {
+         e.printStackTrace();
          System.exit(1);
       }
-      return BOOLEAN;
+      return expType;
    }
 
    /**
@@ -531,15 +634,17 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    public String visit(PlusExpression n, String[] argu) {
       // String _ret = null;
       String type1 = n.f0.accept(this, argu);
-      String operationType = n.f1.accept(this, argu);
+      n.f1.accept(this, argu);
       String type2 = n.f2.accept(this, argu);
 
+      String expType = null;
       try {
-         getExpType(type1, type2, operationType, Integer.toString(n.f1.beginLine));
+         expType = getExpType(type1, type2, n.f1.toString(), Integer.toString(n.f1.beginLine));
       } catch (TypeCheckingException e) {
+         e.printStackTrace();
          System.exit(1);
       }
-      return INT;
+      return expType;
    }
 
    /**
@@ -550,15 +655,17 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    public String visit(MinusExpression n, String[] argu) {
       // String _ret = null;
       String type1 = n.f0.accept(this, argu);
-      String operationType = n.f1.accept(this, argu);
+      n.f1.accept(this, argu);
       String type2 = n.f2.accept(this, argu);
 
+      String expType = null;
       try {
-         getExpType(type1, type2, operationType, Integer.toString(n.f1.beginLine));
+         expType = getExpType(type1, type2, n.f1.toString(), Integer.toString(n.f1.beginLine));
       } catch (TypeCheckingException e) {
+         e.printStackTrace();
          System.exit(1);
       }
-      return INT;
+      return expType;
    }
 
    /**
@@ -569,15 +676,17 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    public String visit(TimesExpression n, String[] argu) {
       // String _ret = null;
       String type1 = n.f0.accept(this, argu);
-      String operationType = n.f1.accept(this, argu);
+      n.f1.accept(this, argu);
       String type2 = n.f2.accept(this, argu);
 
+      String expType = null;
       try {
-         getExpType(type1, type2, operationType, Integer.toString(n.f1.beginLine));
+         expType = getExpType(type1, type2, n.f1.toString(), Integer.toString(n.f1.beginLine));
       } catch (TypeCheckingException e) {
+         e.printStackTrace();
          System.exit(1);
       }
-      return INT;
+      return expType;
    }
 
    /**
@@ -587,12 +696,32 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     * f3 -> "]"
     */
    public String visit(ArrayLookup n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
+      String type1 = n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+
+      try {
+         if (type1 != INT_ARRAY) {
+            throw new TypeCheckingException(
+                  "Identifier is not an int array -> Line: " + Integer.toString(n.f1.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
+      String type2 = n.f2.accept(this, argu);
       n.f3.accept(this, argu);
-      return _ret;
+
+      try {
+         if (type2 != INT) {
+            throw new TypeCheckingException("Identifier is not an int -> Line: " + Integer.toString(n.f3.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
+      return INT;
    }
 
    /**
@@ -601,11 +730,21 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     * f2 -> "length"
     */
    public String visit(ArrayLength n, String[] argu) {
-      String _ret = null;
-      n.f0.accept(this, argu);
+      String type = n.f0.accept(this, argu);
       n.f1.accept(this, argu);
+
+      try {
+         if (type != INT_ARRAY) {
+            throw new TypeCheckingException(
+                  "Identifier is not an int array -> Line: " + Integer.toString(n.f1.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f2.accept(this, argu);
-      return _ret;
+      return INT;
    }
 
    /**
@@ -618,13 +757,44 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     */
    public String visit(MessageSend n, String[] argu) {
       String _ret = null;
-      n.f0.accept(this, argu);
+      String type = n.f0.accept(this, argu);
+
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+
+      // if (type == INT_ARRAY || type == INT || type == BOOLEAN) {
+      //    throw new TypeCheckingException("Identifier is not an object -> Line: " + Integer.toString(n.f1.beginLine));
+      // }
+
+      String methodName = n.f2.accept(this, argu);
+
+      String methodType = null;
+      try {
+         methodType = getMethodType(methodName, type, Integer.toString(n.f1.beginLine));
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f3.accept(this, argu);
-      n.f4.accept(this, argu);
+      if (n.f4.present()) {
+         n.f4.accept(this, new String[] { METHOD, methodName, CLASS, type });
+      }
+
       n.f5.accept(this, argu);
-      return _ret;
+
+      if (!n.f4.present())
+         return methodType;
+
+      try {
+         if (curMethodParamIndex != symbols.getMethodParamsNum(type, methodName) - 1) {
+            throw new TypeCheckingException("Invalid parameters number -> Line:" + n.f5.beginLine);
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
+      return methodType;
    }
 
    /**
@@ -633,7 +803,17 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     */
    public String visit(ExpressionList n, String[] argu) {
       String _ret = null;
-      n.f0.accept(this, argu);
+      curMethodParamIndex = 0;
+
+      String expType = n.f0.accept(this, argu);
+
+      try {
+         checkParamType(expType, argu[3], argu[1], null);
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f1.accept(this, argu);
       return _ret;
    }
@@ -650,9 +830,29 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     * f1 -> Expression()
     */
    public String visit(ExpressionTerm n, String[] argu) {
+      curMethodParamIndex++;
+
       String _ret = null;
       n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
+
+      try {
+         if (curMethodParamIndex >= symbols.getMethodParamsNum(argu[3], argu[1])) {
+            throw new TypeCheckingException("Invalid parameters number -> Line:" + n.f0.beginLine);
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
+      String expType = n.f1.accept(this, argu);
+
+      try {
+         checkParamType(expType, argu[3], argu[1], null);
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       return _ret;
    }
 
@@ -688,6 +888,8 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          try {
             idType = getVarType(choice, argu[3], argu[1], null);
          } catch (TypeCheckingException e) {
+            e.printStackTrace();
+            e.printStackTrace();
             System.exit(1);
          }
 
@@ -751,13 +953,22 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     * f4 -> "]"
     */
    public String visit(ArrayAllocationExpression n, String[] argu) {
-      String _ret = null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
       n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
+      String expType = n.f3.accept(this, argu);
       n.f4.accept(this, argu);
-      return _ret;
+
+      try {
+         if (expType != INT) {
+            throw new TypeCheckingException("Array index is not int -> Line: " + Integer.toString(n.f4.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
+      return INT_ARRAY;
    }
 
    /**
@@ -770,6 +981,27 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
+
+      // String idType = null;
+      // try {
+      //    idType = getVarType(id, argu[3], argu[1], Integer.toString(n.f2.beginLine));
+      // } catch (TypeCheckingException e) {
+      //    // do nothing, continue
+      // }
+
+      try {
+
+         symbols.checkClassExists(id, Integer.toString(n.f2.beginLine));
+         // if (idType.equals(INT) || idType.equals(INT_ARRAY) || idType.equals(BOOLEAN)) {
+         //    throw new TypeCheckingException(
+         //          "Cannot create object of a primitive type -> Line: " + Integer.toString(n.f2.beginLine));
+         // }
+
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f3.accept(this, argu);
 
       return id;

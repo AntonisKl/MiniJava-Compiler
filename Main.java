@@ -16,19 +16,21 @@ class Main {
 		try {
 			fis = new FileInputStream(args[0]);
 			MiniJavaParser parser = new MiniJavaParser(fis);
-			System.err.println("Program parsed successfully.");
-			SymbolTableVisitor eval = new SymbolTableVisitor(symbols);
+			System.out.println("Program parsed successfully");
+			SymbolTableVisitor sybmolTableVisitor = new SymbolTableVisitor(symbols);
 
 			Goal root = parser.Goal();
-			System.out.println(root.accept(eval, null));
+			root.accept(sybmolTableVisitor, null);
 			System.out.println(symbols.toString());
 
-			TypeCheckingVisitor typeCheck = new TypeCheckingVisitor(symbols);
+			TypeCheckingVisitor typeCheckingVisitor = new TypeCheckingVisitor(symbols);
 
-			// System.out.println(root.accept(typeCheck, null));
+			root.accept(typeCheckingVisitor, null);
+
+			System.out.println("Semantic check completed successfully");
 
 			// System.out.println((new int[1]) < (new int[2]));
-			// System.out.println(t && 2);
+			// System.out.println(true);
 		} catch (ParseException ex) {
 			System.out.println(ex.getMessage());
 		} catch (FileNotFoundException ex) {
