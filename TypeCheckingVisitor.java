@@ -288,10 +288,14 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f3.accept(this, argu);
 
       String firstInheritedClassName = symbols.getFirstInheritedClassName(argu[0]);
-
+      String firstInheritedClassMethodName = null;
       if (firstInheritedClassName != null) {
+         firstInheritedClassMethodName = symbols.getMethodType(firstInheritedClassName, id);
+      }
+
+      if (firstInheritedClassMethodName != null) {
          try {
-            if (!symbols.getMethodType(argu[0], id).equals(symbols.getMethodType(firstInheritedClassName, id))) {
+            if (!symbols.getMethodType(argu[0], id).equals(firstInheritedClassMethodName)) {
                throw new TypeCheckingException("Invalid method type in child class -> Line:" + n.f3.beginLine);
             }
          } catch (TypeCheckingException e) {
@@ -300,11 +304,11 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          }
       }
 
-      if (firstInheritedClassName != null && n.f4.present()) {
+      if (firstInheritedClassMethodName != null && n.f4.present()) {
          n.f4.accept(this, new String[] { CLASS, argu[0], METHOD, id, CLASS, firstInheritedClassName });
       }
       try {
-         if (firstInheritedClassName != null && !n.f4.present()
+         if (firstInheritedClassMethodName != null && !n.f4.present()
                && symbols.getMethodParamsNum(firstInheritedClassName, id) > 0) {
             throw new TypeCheckingException("Invalid parameters number -> Line:" + n.f3.beginLine);
          }

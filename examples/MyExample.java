@@ -2,15 +2,17 @@ class MyExample {
 
     public static void main(String[] args) {
         A a;
-        int i;
+        B b;
         a = new A();
-        i =a.foo(4);
+        b = a;
     }
 
 }
 
-class A {
-    public int foo(int arg) {
+class B {}
+
+class A extends B {
+    public int foo() {
         return 1;
     }
 }
