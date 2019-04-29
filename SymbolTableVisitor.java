@@ -22,10 +22,10 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
    * f2 -> <EOF>
    */
    public String visit(Goal n, String[] argu) {
-      String _ret=null;
+      String _ret = null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu); 
+      n.f2.accept(this, argu);
       return null;
    }
 
@@ -55,6 +55,14 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       n.f0.accept(this, argu);
       String id1 = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
+
+      try {
+         symbols.checkClassDeclared(id1, Integer.toString(n.f2.beginLine));
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
       n.f7.accept(this, argu);
@@ -97,10 +105,17 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       String _ret = null;
       n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
+      n.f2.accept(this, argu);
+
+      try {
+         symbols.checkClassDeclared(id, Integer.toString(n.f2.beginLine));
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
 
       symbols.classesMaps.put(id, new ClassMaps());
 
-      n.f2.accept(this, argu);
       n.f3.accept(this, new String[] { CLASS, id });
       n.f4.accept(this, new String[] { id });
       n.f5.accept(this, argu);
@@ -122,6 +137,16 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       n.f0.accept(this, argu);
       String id1 = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
+
+      try {
+         symbols.checkClassDeclared(id1, Integer.toString(n.f2.beginLine));
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
+      symbols.classesMaps.put(id1, new ClassMaps());
+
       String id2 = n.f3.accept(this, argu);
 
       symbols.inheritances.put(id1, id2);
@@ -145,12 +170,31 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       String _ret = null;
       String type = n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
+      n.f2.accept(this, argu);
 
       if (argu[0].equals(CLASS)) {
+         try {
+            if (symbols.getVarType(id, argu[1], null) != null) {
+               throw new TypeCheckingException("Variable declared twice -> Line: " + Integer.toString(n.f2.beginLine));
+            }
+         } catch (TypeCheckingException e) {
+            e.printStackTrace();
+            System.exit(1);
+         }
+
          curVarTypes = symbols.classesMaps.get(argu[1]).varTypes;
          curVarTypes.put(id, type);
          // System.out.println("he");
       } else if (argu[0].equals(METHOD)) {
+         try {
+            if (symbols.getVarType(id, argu[3], argu[1], null, false) != null) {
+               throw new TypeCheckingException("Variable declared twice -> Line: " + Integer.toString(n.f2.beginLine));
+            }
+         } catch (TypeCheckingException e) {
+            e.printStackTrace();
+            System.exit(1);
+         }
+
          curVarTypes = symbols.classesMaps.get(argu[3]).methodVarTypes.get(argu[1]);
          // curVarTypes.put(argu[1], new HashMap<String, String>());
          // curVarTypes.get(argu[1]).put(n.f1.toString(), n.f0.toString());
@@ -160,8 +204,8 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
 
       //System.out.println("declaration: " + n.f1 + "," + n.f0);
 
-      n.f2.accept(this, argu);
       return _ret;
+
    }
 
    /**
@@ -184,12 +228,24 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       n.f0.accept(this, argu);
       String type = n.f1.accept(this, argu);
       String id = n.f2.accept(this, argu);
+      n.f3.accept(this, argu);
 
+      if (symbols.inheritances.get(argu[0]) == null) { // no inherited classes
+         try {
+            if (symbols.getMethodType(id, argu[0], null, false) != null) {
+               throw new TypeCheckingException("Method declared twice -> Line: " + Integer.toString(n.f3.beginLine));
+            }
+         } catch (TypeCheckingException e) {
+            e.printStackTrace();
+            System.exit(1);
+         }
+      }
+
+      // System.out.println("hi: " + argu[0]);
       symbols.classesMaps.get(argu[0]).methodTypes.put(id, type);
       symbols.classesMaps.get(argu[0]).methodVarTypes.put(id, new HashMap<String, String>());
       symbols.classesMaps.get(argu[0]).methodParamTypes.put(id, new ArrayList<String>());
 
-      n.f3.accept(this, argu);
       n.f4.accept(this, new String[] { METHOD, id, CLASS, argu[0] });
       n.f5.accept(this, argu);
       n.f6.accept(this, argu);
@@ -218,21 +274,30 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
     * f1 -> Identifier()
     */
 
-   // argu[0]: "class", argu[1]: name of class OR argu[0]: "method", argu[1]: name of method argu[2]: "class", argu[3]: name of class
+   // argu[0]: "method", argu[1]: name of method, argu[2]: "class", argu[3]: name of class
    public String visit(FormalParameter n, String[] argu) {
       String _ret = null;
       String type = n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
+
+      try {
+         if (symbols.getVarType(id, argu[3], argu[1], null, false) != null) {
+            throw new TypeCheckingException("Variable declared twice -> Line: N/A");
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
 
       Map<String, String> curVarTypes = symbols.classesMaps.get(argu[3]).methodVarTypes.get(argu[1]);
       curVarTypes.put(id, type);
 
       List<String> curParamTypes = symbols.classesMaps.get(argu[3]).methodParamTypes.get(argu[1]);
       curParamTypes.add(type);
-      
+
       // List<String> curParamTypes = symbols.classesMaps.get(argu[3]).methodParamTypes;
       // curParamTypes.add(type);
-      
+
       //System.out.println("FORMAL PARAMETER VISIT -> " + curVarTypes.get(id));
 
       return _ret;

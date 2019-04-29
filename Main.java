@@ -2,10 +2,17 @@ import syntaxtree.*;
 import visitor.*;
 import java.io.*;
 
+class B {}
+
+class A extends B {
+
+}
+
 class Main {
 
 	public static void main(String[] args) {
-
+		A a = new A();
+		B b = a;
 		Symbols symbols = new Symbols();
 
 		if (args.length != 1) {
