@@ -1,6 +1,7 @@
 import java.lang.Exception;
+import java.lang.RuntimeException;
 
-public class TypeCheckingException extends Exception { 
+public class TypeCheckingException extends RuntimeException { 
     private static final long serialVersionUID = 1L;
 
     public TypeCheckingException(String errorMessage) {

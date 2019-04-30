@@ -49,19 +49,19 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
     * f16 -> "}"
     * f17 -> "}"
     */
-   public String visit(MainClass n, String[] argu) {
+   public String visit(MainClass n, String[] argu) throws TypeCheckingException {
       String _ret = null;
 
       n.f0.accept(this, argu);
       String id1 = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
 
-      try {
-         symbols.checkClassDeclared(id1, Integer.toString(n.f2.beginLine));
-      } catch (TypeCheckingException e) {
-         e.printStackTrace();
-         System.exit(1);
-      }
+      // try {
+         // symbols.checkClassDeclared(id1, Integer.toString(n.f2.beginLine));
+      // } catch (TypeCheckingException e) {
+      //    e.printStackTrace();
+      //    System.exit(1);
+      // }
 
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
@@ -101,18 +101,18 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
     * f4 -> ( MethodDeclaration() )*
     * f5 -> "}"
     */
-   public String visit(ClassDeclaration n, String[] argu) {
+   public String visit(ClassDeclaration n, String[] argu) throws TypeCheckingException{
       String _ret = null;
       n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
 
-      try {
+      // try {
          symbols.checkClassDeclared(id, Integer.toString(n.f2.beginLine));
-      } catch (TypeCheckingException e) {
-         e.printStackTrace();
-         System.exit(1);
-      }
+      // } catch (TypeCheckingException e) {
+      //    e.printStackTrace();
+      //    System.exit(1);
+      // }
 
       symbols.classesMaps.put(id, new ClassMaps());
 
@@ -132,18 +132,18 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
     * f6 -> ( MethodDeclaration() )*
     * f7 -> "}"
     */
-   public String visit(ClassExtendsDeclaration n, String[] argu) {
+   public String visit(ClassExtendsDeclaration n, String[] argu)throws TypeCheckingException {
       String _ret = null;
       n.f0.accept(this, argu);
       String id1 = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
 
-      try {
+      // try {
          symbols.checkClassDeclared(id1, Integer.toString(n.f2.beginLine));
-      } catch (TypeCheckingException e) {
-         e.printStackTrace();
-         System.exit(1);
-      }
+      // } catch (TypeCheckingException e) {
+      //    e.printStackTrace();
+      //    System.exit(1);
+      // }
 
       
 
@@ -151,12 +151,12 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
 
       String id2 = n.f3.accept(this, argu);
 
-      try {
+      // try {
          symbols.checkClassNotDeclared(id2, Integer.toString(n.f2.beginLine));
-      } catch (TypeCheckingException e) {
-         e.printStackTrace();
-         System.exit(1);
-      }
+      // } catch (TypeCheckingException e) {
+      //    e.printStackTrace();
+      //    System.exit(1);
+      // }
 
       symbols.inheritances.put(id1, id2);
 
@@ -173,7 +173,7 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
     * f2 -> ";"
     */
    // argu[0]: "class", argu[1]: name of class OR argu[0]: "method", argu[1]: name of method argu[2]: "class", argu[3]: name of class
-   public String visit(VarDeclaration n, String[] argu) {
+   public String visit(VarDeclaration n, String[] argu) throws TypeCheckingException {
       Map<String, String> curVarTypes;
 
       String _ret = null;
@@ -182,27 +182,27 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       n.f2.accept(this, argu);
 
       if (argu[0].equals(CLASS)) {
-         try {
+         // try {
             if (symbols.getVarType(id, argu[1], null) != null) {
                throw new TypeCheckingException("Variable declared twice -> Line: " + Integer.toString(n.f2.beginLine));
             }
-         } catch (TypeCheckingException e) {
-            e.printStackTrace();
-            System.exit(1);
-         }
+         // } catch (TypeCheckingException e) {
+         //    e.printStackTrace();
+         //    System.exit(1);
+         // }
 
          curVarTypes = symbols.classesMaps.get(argu[1]).varTypes;
          curVarTypes.put(id, type);
          // System.out.println("he");
       } else if (argu[0].equals(METHOD)) {
-         try {
+         // try {
             if (symbols.getVarType(id, argu[3], argu[1], null, false) != null) {
                throw new TypeCheckingException("Variable declared twice -> Line: " + Integer.toString(n.f2.beginLine));
             }
-         } catch (TypeCheckingException e) {
-            e.printStackTrace();
-            System.exit(1);
-         }
+         // } catch (TypeCheckingException e) {
+         //    e.printStackTrace();
+         //    System.exit(1);
+         // }
 
          curVarTypes = symbols.classesMaps.get(argu[3]).methodVarTypes.get(argu[1]);
          // curVarTypes.put(argu[1], new HashMap<String, String>());
@@ -232,7 +232,7 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
     * f11 -> ";"
     * f12 -> "}"
     */
-   public String visit(MethodDeclaration n, String[] argu) { // argu[0]: class name
+   public String visit(MethodDeclaration n, String[] argu) throws TypeCheckingException{ // argu[0]: class name
       String _ret = null;
       n.f0.accept(this, argu);
       String type = n.f1.accept(this, argu);
@@ -240,14 +240,14 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       n.f3.accept(this, argu);
 
       if (symbols.inheritances.get(argu[0]) == null) { // no inherited classes
-         try {
+         // try {
             if (symbols.getMethodType(id, argu[0], null, false) != null) {
                throw new TypeCheckingException("Method declared twice -> Line: " + Integer.toString(n.f3.beginLine));
             }
-         } catch (TypeCheckingException e) {
-            e.printStackTrace();
-            System.exit(1);
-         }
+         // } catch (TypeCheckingException e) {
+         //    e.printStackTrace();
+         //    System.exit(1);
+         // }
       }
 
       // System.out.println("hi: " + argu[0]);
