@@ -12,9 +12,6 @@ class MyExample {
 
 class A {
     int i;
-    boolean flag;
-    int j;
-
     public int foo() {
         return 1;
     }
