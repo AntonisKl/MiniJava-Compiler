@@ -269,7 +269,8 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          // String mapKey=entry.getKey();
          // System.out.println("Key = " + mapKey + ", Value = " + varOffsets.get(mapKey));
       }
-      curOffset = varOffsets.get(lastEntry.getKey()) + getOffsetPerType(symbols.classesMaps.get(id1).varTypes.get(lastEntry.getKey()));
+      curOffset = varOffsets.get(lastEntry.getKey())
+            + getOffsetPerType(symbols.classesMaps.get(id1).varTypes.get(lastEntry.getKey()));
 
       n.f5.accept(this, new String[] { id });
 
@@ -720,7 +721,17 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       String _ret = null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+      String expType = n.f2.accept(this, argu);
+      try {
+         if (!expType.equals(BOOLEAN) && !expType.equals(INT)) {
+            throw new TypeCheckingException(
+                  "Expression of print statement is of reference type -> Line: " + Integer.toString(n.f3.beginLine));
+         }
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
+
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
       return _ret;
