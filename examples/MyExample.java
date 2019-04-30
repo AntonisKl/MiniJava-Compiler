@@ -3,16 +3,24 @@ class MyExample {
     public static void main(String[] args) {
         A a;
         B b;
-        a = new A();
-        b = a;
+        // a = new A();
+        // b = a;
     }
 
 }
 
-class B {}
+class A{
+    int i;
+    boolean flag;
+    int j;
+    public int foo() {return 1;}
+    public boolean fa() {return false;}
+}
 
-class A extends B {
-    public int foo() {
-        return 1;
-    }
+class B extends A{
+    A type;
+    int i;
+    boolean flag;
+    public int foo() {return 1;}
+    public boolean bla() {return true;}
 }

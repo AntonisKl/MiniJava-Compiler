@@ -145,9 +145,18 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
          System.exit(1);
       }
 
+      
+
       symbols.classesMaps.put(id1, new ClassMaps());
 
       String id2 = n.f3.accept(this, argu);
+
+      try {
+         symbols.checkClassNotDeclared(id2, Integer.toString(n.f2.beginLine));
+      } catch (TypeCheckingException e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
 
       symbols.inheritances.put(id1, id2);
 
@@ -280,14 +289,14 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       String type = n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
 
-      try {
-         if (symbols.getVarType(id, argu[3], argu[1], null, false) != null) {
-            throw new TypeCheckingException("Variable declared twice -> Line: N/A");
-         }
-      } catch (TypeCheckingException e) {
-         e.printStackTrace();
-         System.exit(1);
-      }
+      // try {
+      //    if (symbols.getVarType(id, argu[3], argu[1], null, false) != null) {
+      //       throw new TypeCheckingException("Variable declared twice -> Line: N/A");
+      //    }
+      // } catch (TypeCheckingException e) {
+      //    e.printStackTrace();
+      //    System.exit(1);
+      // }
 
       Map<String, String> curVarTypes = symbols.classesMaps.get(argu[3]).methodVarTypes.get(argu[1]);
       curVarTypes.put(id, type);

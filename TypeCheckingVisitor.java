@@ -2,6 +2,8 @@ import syntaxtree.*;
 import visitor.GJDepthFirst;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Iterator;
 
 public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
 
@@ -12,12 +14,23 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    final static String INT = "int";
    final static String INT_ARRAY = "int[]";
 
-   int curMethodParamIndex;
+   int curMethodParamIndex, curOffset;
 
    Symbols symbols;
 
    public TypeCheckingVisitor(Symbols symbols) {
       this.symbols = symbols;
+   }
+
+   private int getOffsetPerType(String type) {
+      switch (type) {
+      case BOOLEAN:
+         return 1;
+      case INT:
+         return 4;
+      default:
+         return 8;
+      }
    }
 
    // private String symbols.getVarType(String id, String className, String methodName, String lineInfo)
@@ -221,7 +234,9 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
-      // n.f3.accept(this, argu);
+      curOffset = 0;
+      n.f3.accept(this, new String[] { id });
+      curOffset = 0;
       n.f4.accept(this, new String[] { id });
       n.f5.accept(this, argu);
       return _ret;
@@ -242,28 +257,54 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
+      String id1 = n.f3.accept(this, argu);
       n.f4.accept(this, argu);
-      // n.f5.accept(this, argu);
+
+      Map<String, Integer> varOffsets = symbols.classesMaps.get(id1).varOffsets;
+
+      Iterator<Map.Entry<String, Integer>> entries = varOffsets.entrySet().iterator();
+      Map.Entry<String, Integer> lastEntry = null;
+      while (entries.hasNext()) {
+         lastEntry = entries.next();
+         // String mapKey=entry.getKey();
+         // System.out.println("Key = " + mapKey + ", Value = " + varOffsets.get(mapKey));
+      }
+      curOffset = varOffsets.get(lastEntry.getKey()) + getOffsetPerType(symbols.classesMaps.get(id1).varTypes.get(lastEntry.getKey()));
+
+      n.f5.accept(this, new String[] { id });
+
+      Map<String, Integer> methodOffsets = symbols.classesMaps.get(id1).methodOffsets;
+
+      entries = methodOffsets.entrySet().iterator();
+      while (entries.hasNext()) {
+         lastEntry = entries.next();
+         // String mapKey=entry.getKey();
+         // System.out.println("Key = " + mapKey + ", Value = " + varOffsets.get(mapKey));
+      }
+      curOffset = methodOffsets.get(lastEntry.getKey()) + getOffsetPerType("method");
       n.f6.accept(this, new String[] { id });
       n.f7.accept(this, argu);
       return _ret;
    }
 
-   // /**
-   //  * f0 -> Type()
-   //  * f1 -> Identifier()
-   //  * f2 -> ";"
-   //  */
-   // public String visit(VarDeclaration n, String[] argu) {
-   //    Map<String, String> curVarTypes;
+   /**
+    * f0 -> Type()
+    * f1 -> Identifier()
+    * f2 -> ";"
+    */
+   public String visit(VarDeclaration n, String[] argu) {
 
-   //    String _ret = null;
-   //    n.f0.accept(this, argu);
-   //    n.f1.accept(this, argu);
-   //    n.f2.accept(this, argu);
-   //    return _ret;
-   // }
+      String _ret = null;
+      String type = n.f0.accept(this, argu);
+      String id = n.f1.accept(this, argu);
+
+      // System.out.println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii");
+      symbols.classesMaps.get(argu[0]).varOffsets.put(id, curOffset);
+      curOffset += getOffsetPerType(type);
+
+      n.f2.accept(this, argu);
+      return _ret;
+   }
 
    /**
     * f0 -> "public"
@@ -287,6 +328,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       String id = n.f2.accept(this, argu);
       n.f3.accept(this, argu);
 
+      boolean handleOffset = true;
       String firstInheritedClassName = symbols.getFirstInheritedClassName(argu[0]);
       String firstInheritedClassMethodName = null;
       if (firstInheritedClassName != null) {
@@ -302,6 +344,8 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
             e.printStackTrace();
             System.exit(1);
          }
+         // method override, so don't handle offset
+         handleOffset = false;
       }
 
       if (firstInheritedClassMethodName != null && n.f4.present()) {
@@ -336,6 +380,12 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       }
 
       n.f12.accept(this, argu);
+
+      if (handleOffset) {
+         symbols.classesMaps.get(argu[0]).methodOffsets.put(id, curOffset);
+         curOffset += getOffsetPerType("method");
+      }
+
       return _ret;
    }
 

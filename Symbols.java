@@ -12,7 +12,7 @@ class Symbols {
 		inheritances = new HashMap<String, String>();
 	}
 
-	public String getVarType(String id, String className, String methodName, String lineInfo, boolean throwNotDeclared) // ADD A MODE FOR DECLARATION AND EXPRESSION
+	public String getVarType(String id, String className, String methodName, String lineInfo, boolean checkClassScope) // ADD A MODE FOR DECLARATION AND EXPRESSION
 			throws TypeCheckingException {
 		Map<String, String> curClassVarTypes = classesMaps.get(className).varTypes;
 		Map<String, String> curMethodVarTypes = classesMaps.get(className).methodVarTypes.get(methodName);
@@ -20,6 +20,10 @@ class Symbols {
 		//    System.out.println((new PrettyPrintingMap(curMethodVarTypes)).toString());
 		// }
 		String methodScopeVarType = curMethodVarTypes.get(id);
+
+		if (!checkClassScope)
+			return methodScopeVarType;
+
 		// System.out.println(methodScopeVarType);
 		String classScopeVarType = curClassVarTypes.get(id);
 
@@ -32,9 +36,8 @@ class Symbols {
 					return classesMaps.get(curClassName).varTypes.get(id);
 			}
 
-			if (throwNotDeclared) {
-				throw new TypeCheckingException("Variable not declared -> Line: " + lineInfo);
-			}
+			throw new TypeCheckingException("Variable not declared -> Line: " + lineInfo);
+
 		}
 		// if (methodScopeIdType != null)
 		//    return;
@@ -44,7 +47,8 @@ class Symbols {
 		// classScopeIdType != null
 	}
 
-	public String getVarType(String id, String className, String lineInfo) throws TypeCheckingException {
+	public String getVarType(String id, String className, String lineInfo)
+			throws TypeCheckingException {
 		Map<String, String> curClassVarTypes = classesMaps.get(className).varTypes;
 		// if (id == "new_node") {
 		//    System.out.println((new PrettyPrintingMap(curMethodVarTypes)).toString());
@@ -52,17 +56,19 @@ class Symbols {
 		// System.out.println(methodScopeVarType);
 		String classScopeVarType = curClassVarTypes.get(id);
 
-		if (classScopeVarType == null) {
-			String curClassName = className;
-			while (inheritances.get(curClassName) != null) {
-				curClassName = inheritances.get(curClassName);
+		// if (!checkParentClasses)
+		// 	return classScopeVarType;
 
-				if (classesMaps.get(curClassName).varTypes.get(id) != null)
-					return classesMaps.get(curClassName).varTypes.get(id);
-			}
+		// if (classScopeVarType == null) {
+		// 	String curClassName = className;
+		// 	while (inheritances.get(curClassName) != null) {
+		// 		curClassName = inheritances.get(curClassName);
 
-			// throw new TypeCheckingException("Variable declared twice -> Line: " + lineInfo);
-		}
+		// 		if (classesMaps.get(curClassName).varTypes.get(id) != null)
+		// 			return classesMaps.get(curClassName).varTypes.get(id);
+		// 	}
+
+		// }
 		// if (methodScopeIdType != null)
 		//    return;
 
@@ -98,6 +104,16 @@ class Symbols {
 		// System.out.println("id: " + id);
 		if (foundClassMaps != null) {
 			throw new TypeCheckingException("Class declared twice -> Line: " + lineInfo);
+		}
+
+		return;
+	}
+
+	public void checkClassNotDeclared(String id, String lineInfo) throws TypeCheckingException {
+		ClassMaps foundClassMaps = classesMaps.get(id);
+		// System.out.println("id: " + id);
+		if (foundClassMaps == null) {
+			throw new TypeCheckingException("Parent class not declared -> Line: " + lineInfo);
 		}
 
 		return;

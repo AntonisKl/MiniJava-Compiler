@@ -25,16 +25,18 @@ class Main {
 			MiniJavaParser parser = new MiniJavaParser(fis);
 			System.out.println("Program parsed successfully");
 			SymbolTableVisitor sybmolTableVisitor = new SymbolTableVisitor(symbols);
+			System.out.println("Symbol table created successfully");
 
 			Goal root = parser.Goal();
 			root.accept(sybmolTableVisitor, null);
-			System.out.println(symbols.toString());
 
 			TypeCheckingVisitor typeCheckingVisitor = new TypeCheckingVisitor(symbols);
 
 			root.accept(typeCheckingVisitor, null);
 
 			System.out.println("Semantic check completed successfully");
+
+			System.out.println(symbols.toString());
 
 			// System.out.println((new int[1]) < (new int[2]));
 			// System.out.println(true);
