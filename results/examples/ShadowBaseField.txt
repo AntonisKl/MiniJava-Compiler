@@ -1,0 +1,65 @@
+
+Classes' maps:
+A: "
+	Variable types:
+	x: "int"
+
+	Method types:
+	getX: "int"
+
+	Method varibale types:
+	getX: "{}"
+
+	Method parameter types:
+	getX: "[]"
+
+	Variable offsets:
+	x: "0"
+
+	Method offsets:
+	getX: "0"
+
+"B: "
+	Variable types:
+	x: "int"
+
+	Method types:
+	getX: "int"
+
+	Method varibale types:
+	getX: "{}"
+
+	Method parameter types:
+	getX: "[]"
+
+	Variable offsets:
+	x: "4"
+
+	Method offsets:
+	
+
+"ShadowBaseField: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "
+		a: "A"
+		"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	B: "A"

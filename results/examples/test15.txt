@@ -1,0 +1,58 @@
+
+Classes' maps:
+test15: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"Test: "
+	Variable types:
+	i: "int"
+	k: "int"
+
+	Method types:
+	start: "int"
+	mutual2: "int"
+	mutual1: "int"
+
+	Method varibale types:
+	start: "{}"
+	mutual2: "
+		j: "int"
+		"
+	mutual1: "
+		j: "int"
+		"
+
+	Method parameter types:
+	start: "[]"
+	mutual2: "[]"
+	mutual1: "[]"
+
+	Variable offsets:
+	i: "0"
+	k: "4"
+
+	Method offsets:
+	start: "0"
+	mutual1: "8"
+	mutual2: "16"
+
+"
+
+Inheritances:
+	

@@ -1,0 +1,52 @@
+
+Classes' maps:
+test99: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"Test: "
+	Variable types:
+	test: "Test"
+	i: "int"
+
+	Method types:
+	next: "int"
+	start: "int"
+
+	Method varibale types:
+	next: "
+		t: "Test"
+		"
+	start: "{}"
+
+	Method parameter types:
+	next: "[Test]"
+	start: "[]"
+
+	Variable offsets:
+	test: "0"
+	i: "8"
+
+	Method offsets:
+	start: "0"
+	next: "8"
+
+"
+
+Inheritances:
+	

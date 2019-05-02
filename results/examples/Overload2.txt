@@ -1,0 +1,44 @@
+
+Classes' maps:
+A: "
+	Variable types:
+	x: "int"
+
+	Method types:
+	x: "int"
+
+	Method varibale types:
+	x: "{}"
+
+	Method parameter types:
+	x: "[]"
+
+	Variable offsets:
+	x: "0"
+
+	Method offsets:
+	x: "0"
+
+"Overload2: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	

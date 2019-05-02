@@ -19,6 +19,8 @@ class Main {
 				FileOutputStream outStream = new FileOutputStream(outFilePath);
 
 				fis = new FileInputStream(arg);
+
+				System.out.println("Handling file with name: " + arg);
 				MiniJavaParser parser = new MiniJavaParser(fis);
 				System.out.println("Program parsed successfully");
 

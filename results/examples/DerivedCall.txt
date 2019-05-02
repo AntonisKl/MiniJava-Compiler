@@ -1,0 +1,88 @@
+
+Classes' maps:
+A: "
+	Variable types:
+	a: "int"
+
+	Method types:
+	
+
+	Method varibale types:
+	
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	a: "0"
+
+	Method offsets:
+	
+
+"B: "
+	Variable types:
+	b: "int"
+
+	Method types:
+	
+
+	Method varibale types:
+	
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	b: "4"
+
+	Method offsets:
+	
+
+"F: "
+	Variable types:
+	
+
+	Method types:
+	foo: "int"
+
+	Method varibale types:
+	foo: "
+		a: "A"
+		"
+
+	Method parameter types:
+	foo: "[A]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	foo: "0"
+
+"DerivedCall: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "
+		b: "B"
+		f: "F"
+		i: "int"
+		"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	B: "A"

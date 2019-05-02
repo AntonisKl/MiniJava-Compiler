@@ -1,0 +1,52 @@
+
+Classes' maps:
+Operator: "
+	Variable types:
+	result: "boolean"
+	op2int: "int"
+	op1int: "int"
+	op1bool: "boolean"
+	op2bool: "boolean"
+
+	Method types:
+	compute: "int"
+
+	Method varibale types:
+	compute: "{}"
+
+	Method parameter types:
+	compute: "[]"
+
+	Variable offsets:
+	op1bool: "0"
+	op2bool: "1"
+	op1int: "2"
+	op2int: "6"
+	result: "10"
+
+	Method offsets:
+	compute: "0"
+
+"test07: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	

@@ -1,0 +1,74 @@
+
+Classes' maps:
+Derived: "
+	Variable types:
+	
+
+	Method types:
+	set: "int"
+
+	Method varibale types:
+	set: "
+		x: "int"
+		"
+
+	Method parameter types:
+	set: "[int]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"Base: "
+	Variable types:
+	data: "int"
+
+	Method types:
+	set: "int"
+	get: "int"
+
+	Method varibale types:
+	set: "
+		x: "int"
+		"
+	get: "{}"
+
+	Method parameter types:
+	set: "[int]"
+	get: "[]"
+
+	Variable offsets:
+	data: "0"
+
+	Method offsets:
+	set: "0"
+	get: "8"
+
+"Classes: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "
+		b: "Base"
+		d: "Derived"
+		"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	Derived: "Base"

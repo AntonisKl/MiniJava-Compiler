@@ -1,0 +1,47 @@
+
+Classes' maps:
+Factorial: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"Fac: "
+	Variable types:
+	
+
+	Method types:
+	ComputeFac: "int"
+
+	Method varibale types:
+	ComputeFac: "
+		num: "int"
+		num_aux: "int"
+		"
+
+	Method parameter types:
+	ComputeFac: "[int]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	ComputeFac: "0"
+
+"
+
+Inheritances:
+	

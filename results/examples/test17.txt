@@ -1,0 +1,57 @@
+
+Classes' maps:
+Test: "
+	Variable types:
+	i: "int"
+
+	Method types:
+	start: "int"
+	first: "Test"
+	second: "int"
+
+	Method varibale types:
+	start: "
+		test: "Test"
+		"
+	first: "
+		test2: "Test"
+		test3: "Test"
+		"
+	second: "{}"
+
+	Method parameter types:
+	start: "[]"
+	first: "[Test]"
+	second: "[]"
+
+	Variable offsets:
+	i: "0"
+
+	Method offsets:
+	start: "0"
+	first: "8"
+	second: "16"
+
+"test17: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	

@@ -119,8 +119,25 @@ class Symbols {
 		return;
 	}
 
-	public int getMethodParamsNum(String className, String methodName) {
-		return classesMaps.get(className).methodParamTypes.get(methodName).size();
+	public int getMethodParamsNum(String className, String methodName, String lineInfo) throws TypeCheckingException {
+		// return classesMaps.get(className).methodParamTypes.get(methodName).size();
+
+		Map<String, List<String>> curClassMethodParamTypes = classesMaps.get(className).methodParamTypes;
+		List<String> classScopeMethodParamTypes = curClassMethodParamTypes.get(methodName);
+
+		if (classScopeMethodParamTypes == null) {
+			String curClassName = className;
+			while (inheritances.get(curClassName) != null) {
+				curClassName = inheritances.get(curClassName);
+
+				if (classesMaps.get(curClassName).methodParamTypes.get(methodName) != null)
+					return classesMaps.get(curClassName).methodParamTypes.get(methodName).size();
+			}
+
+			throw new TypeCheckingException("Method not declared -> Line: " + lineInfo);
+		}
+
+		return classScopeMethodParamTypes.size();
 	}
 
 	public String getMethodType(String className, String methodName) {

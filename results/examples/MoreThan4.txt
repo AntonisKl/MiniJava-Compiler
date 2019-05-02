@@ -1,0 +1,63 @@
+
+Classes' maps:
+MoreThan4: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"MT4: "
+	Variable types:
+	
+
+	Method types:
+	Start: "int"
+	Change: "int"
+
+	Method varibale types:
+	Start: "
+		p1: "int"
+		p2: "int"
+		p3: "int"
+		p4: "int"
+		p5: "int"
+		aux: "int"
+		p6: "int"
+		"
+	Change: "
+		p1: "int"
+		p2: "int"
+		p3: "int"
+		p4: "int"
+		p5: "int"
+		p6: "int"
+		"
+
+	Method parameter types:
+	Start: "[int, int, int, int, int, int]"
+	Change: "[int, int, int, int, int, int]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	Start: "0"
+	Change: "8"
+
+"
+
+Inheritances:
+	

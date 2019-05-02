@@ -240,17 +240,11 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       n.f3.accept(this, argu);
 
       if (symbols.inheritances.get(argu[0]) == null) { // no inherited classes
-         // try {
             if (symbols.getMethodType(id, argu[0], null, false) != null) {
                throw new TypeCheckingException("Method declared twice -> Line: " + Integer.toString(n.f3.beginLine));
             }
-         // } catch (TypeCheckingException e) {
-         //    e.printStackTrace();
-         //    System.exit(1);
-         // }
       }
 
-      // System.out.println("hi: " + argu[0]);
       symbols.classesMaps.get(argu[0]).methodTypes.put(id, type);
       symbols.classesMaps.get(argu[0]).methodVarTypes.put(id, new HashMap<String, String>());
       symbols.classesMaps.get(argu[0]).methodParamTypes.put(id, new ArrayList<String>());
@@ -289,25 +283,11 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
       String type = n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
 
-      // try {
-      //    if (symbols.getVarType(id, argu[3], argu[1], null, false) != null) {
-      //       throw new TypeCheckingException("Variable declared twice -> Line: N/A");
-      //    }
-      // } catch (TypeCheckingException e) {
-      //    e.printStackTrace();
-      //    System.exit(1);
-      // }
-
       Map<String, String> curVarTypes = symbols.classesMaps.get(argu[3]).methodVarTypes.get(argu[1]);
       curVarTypes.put(id, type);
 
       List<String> curParamTypes = symbols.classesMaps.get(argu[3]).methodParamTypes.get(argu[1]);
       curParamTypes.add(type);
-
-      // List<String> curParamTypes = symbols.classesMaps.get(argu[3]).methodParamTypes;
-      // curParamTypes.add(type);
-
-      //System.out.println("FORMAL PARAMETER VISIT -> " + curVarTypes.get(id));
 
       return _ret;
    }
@@ -346,7 +326,6 @@ public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
     * f2 -> "]"
     */
    public String visit(ArrayType n, String[] argu) {
-      //  String _ret=null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
       n.f2.accept(this, argu);

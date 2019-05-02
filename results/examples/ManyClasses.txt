@@ -1,0 +1,94 @@
+
+Classes' maps:
+A: "
+	Variable types:
+	data: "boolean"
+
+	Method types:
+	get: "int"
+
+	Method varibale types:
+	get: "
+		rv: "int"
+		"
+
+	Method parameter types:
+	get: "[]"
+
+	Variable offsets:
+	data: "0"
+
+	Method offsets:
+	get: "0"
+
+"B: "
+	Variable types:
+	
+
+	Method types:
+	set: "boolean"
+
+	Method varibale types:
+	set: "
+		old: "boolean"
+		"
+
+	Method parameter types:
+	set: "[]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	set: "8"
+
+"C: "
+	Variable types:
+	
+
+	Method types:
+	reset: "boolean"
+
+	Method varibale types:
+	reset: "
+		old: "boolean"
+		"
+
+	Method parameter types:
+	reset: "[]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	reset: "16"
+
+"ManyClasses: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "
+		a: "A"
+		b: "B"
+		c: "C"
+		rv: "boolean"
+		"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	B: "A"
+	C: "B"

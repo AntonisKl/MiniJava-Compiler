@@ -1,0 +1,66 @@
+
+Classes' maps:
+A: "
+	Variable types:
+	
+
+	Method types:
+	foo: "int"
+
+	Method varibale types:
+	foo: "{}"
+
+	Method parameter types:
+	foo: "[]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	foo: "0"
+
+"B: "
+	Variable types:
+	
+
+	Method types:
+	
+
+	Method varibale types:
+	
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"CallFromSuper: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "
+		b: "B"
+		rv: "int"
+		"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	B: "A"

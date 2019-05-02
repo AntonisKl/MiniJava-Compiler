@@ -1,0 +1,76 @@
+
+Classes' maps:
+QuickSort: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"QS: "
+	Variable types:
+	number: "int[]"
+	size: "int"
+
+	Method types:
+	Print: "int"
+	Init: "int"
+	Start: "int"
+	Sort: "int"
+
+	Method varibale types:
+	Print: "
+		j: "int"
+		"
+	Init: "
+		sz: "int"
+		"
+	Start: "
+		sz: "int"
+		aux01: "int"
+		"
+	Sort: "
+		t: "int"
+		left: "int"
+		v: "int"
+		nt: "int"
+		i: "int"
+		j: "int"
+		aux03: "int"
+		right: "int"
+		cont02: "boolean"
+		cont01: "boolean"
+		"
+
+	Method parameter types:
+	Print: "[]"
+	Init: "[int]"
+	Start: "[int]"
+	Sort: "[int, int]"
+
+	Variable offsets:
+	number: "0"
+	size: "8"
+
+	Method offsets:
+	Start: "0"
+	Sort: "8"
+	Print: "16"
+	Init: "24"
+
+"
+
+Inheritances:
+	

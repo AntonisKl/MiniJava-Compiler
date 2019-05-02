@@ -1,0 +1,51 @@
+
+Classes' maps:
+Test: "
+	Variable types:
+	
+
+	Method types:
+	start: "boolean"
+
+	Method varibale types:
+	start: "
+		b: "int[]"
+		sz: "int"
+		i: "int"
+		l: "int"
+		"
+
+	Method parameter types:
+	start: "[int]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	start: "0"
+
+"ArrayTest: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "
+		n: "boolean"
+		"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	

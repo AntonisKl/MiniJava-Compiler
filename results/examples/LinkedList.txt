@@ -1,0 +1,201 @@
+
+Classes' maps:
+LL: "
+	Variable types:
+	
+
+	Method types:
+	Start: "int"
+
+	Method varibale types:
+	Start: "
+		head: "List"
+		last_elem: "List"
+		el03: "Element"
+		el02: "Element"
+		el01: "Element"
+		aux01: "boolean"
+		"
+
+	Method parameter types:
+	Start: "[]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	Start: "0"
+
+"Element: "
+	Variable types:
+	Salary: "int"
+	Married: "boolean"
+	Age: "int"
+
+	Method types:
+	GetSalary: "int"
+	Init: "boolean"
+	GetAge: "int"
+	Equal: "boolean"
+	GetMarried: "boolean"
+	Compare: "boolean"
+
+	Method varibale types:
+	GetSalary: "{}"
+	Init: "
+		v_Salary: "int"
+		v_Married: "boolean"
+		v_Age: "int"
+		"
+	GetAge: "{}"
+	Equal: "
+		other: "Element"
+		nt: "int"
+		aux01: "int"
+		aux02: "int"
+		ret_val: "boolean"
+		"
+	GetMarried: "{}"
+	Compare: "
+		num1: "int"
+		aux02: "int"
+		retval: "boolean"
+		num2: "int"
+		"
+
+	Method parameter types:
+	GetSalary: "[]"
+	Init: "[int, int, boolean]"
+	GetAge: "[]"
+	Equal: "[Element]"
+	GetMarried: "[]"
+	Compare: "[int, int]"
+
+	Variable offsets:
+	Age: "0"
+	Salary: "4"
+	Married: "8"
+
+	Method offsets:
+	Init: "0"
+	GetAge: "8"
+	GetSalary: "16"
+	GetMarried: "24"
+	Equal: "32"
+	Compare: "40"
+
+"List: "
+	Variable types:
+	elem: "Element"
+	next: "List"
+	end: "boolean"
+
+	Method types:
+	Delete: "List"
+	Print: "boolean"
+	Init: "boolean"
+	GetElem: "Element"
+	GetNext: "List"
+	SetNext: "boolean"
+	Search: "int"
+	GetEnd: "boolean"
+	InitNew: "boolean"
+	Insert: "List"
+
+	Method varibale types:
+	Delete: "
+		aux05: "boolean"
+		e: "Element"
+		aux04: "int"
+		nt: "int"
+		prev: "List"
+		aux01: "List"
+		var_end: "boolean"
+		ret_val: "boolean"
+		my_head: "List"
+		var_elem: "Element"
+		"
+	Print: "
+		aux01: "List"
+		var_end: "boolean"
+		var_elem: "Element"
+		"
+	Init: "{}"
+	GetElem: "{}"
+	GetNext: "{}"
+	SetNext: "
+		v_next: "List"
+		"
+	Search: "
+		e: "Element"
+		nt: "int"
+		aux01: "List"
+		var_end: "boolean"
+		int_ret_val: "int"
+		var_elem: "Element"
+		"
+	GetEnd: "{}"
+	InitNew: "
+		v_next: "List"
+		v_end: "boolean"
+		v_elem: "Element"
+		"
+	Insert: "
+		aux03: "List"
+		aux02: "List"
+		ret_val: "boolean"
+		new_elem: "Element"
+		"
+
+	Method parameter types:
+	Delete: "[Element]"
+	Print: "[]"
+	Init: "[]"
+	GetElem: "[]"
+	GetNext: "[]"
+	SetNext: "[List]"
+	Search: "[Element]"
+	GetEnd: "[]"
+	InitNew: "[Element, List, boolean]"
+	Insert: "[Element]"
+
+	Variable offsets:
+	elem: "0"
+	next: "8"
+	end: "16"
+
+	Method offsets:
+	Init: "0"
+	InitNew: "8"
+	Insert: "16"
+	SetNext: "24"
+	Delete: "32"
+	Search: "40"
+	GetEnd: "48"
+	GetElem: "56"
+	GetNext: "64"
+	Print: "72"
+
+"LinkedList: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	

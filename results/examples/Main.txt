@@ -1,0 +1,79 @@
+
+Classes' maps:
+B: "
+	Variable types:
+	aaa: "int"
+	we: "int"
+
+	Method types:
+	test: "int"
+
+	Method varibale types:
+	test: "
+		num: "int"
+		i: "int"
+		intArray: "int[]"
+		"
+
+	Method parameter types:
+	test: "[int]"
+
+	Variable offsets:
+	aaa: "12"
+	we: "16"
+
+	Method offsets:
+	
+
+"ArrayTest: "
+	Variable types:
+	aaa: "int"
+	weee: "int"
+	wre: "int"
+
+	Method types:
+	test: "int"
+
+	Method varibale types:
+	test: "
+		num: "int"
+		i: "int"
+		intArray: "int[]"
+		"
+
+	Method parameter types:
+	test: "[int]"
+
+	Variable offsets:
+	weee: "0"
+	wre: "4"
+	aaa: "8"
+
+	Method offsets:
+	test: "0"
+
+"Main: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "
+		ab: "ArrayTest"
+		"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	B: "ArrayTest"

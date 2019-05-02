@@ -1,0 +1,63 @@
+
+Classes' maps:
+FieldAndClassConflict: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"A: "
+	Variable types:
+	A: "A"
+
+	Method types:
+	B: "int"
+
+	Method varibale types:
+	B: "{}"
+
+	Method parameter types:
+	B: "[]"
+
+	Variable offsets:
+	A: "0"
+
+	Method offsets:
+	B: "0"
+
+"B: "
+	Variable types:
+	A: "B"
+
+	Method types:
+	
+
+	Method varibale types:
+	
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	A: "0"
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	

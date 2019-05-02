@@ -1,0 +1,46 @@
+
+Classes' maps:
+A: "
+	Variable types:
+	
+
+	Method types:
+	run: "int"
+
+	Method varibale types:
+	run: "
+		a: "int[]"
+		"
+
+	Method parameter types:
+	run: "[]"
+
+	Variable offsets:
+	
+
+	Method offsets:
+	run: "0"
+
+"OutOfBounds1: "
+	Variable types:
+	
+
+	Method types:
+	main: "void"
+
+	Method varibale types:
+	main: "{}"
+
+	Method parameter types:
+	
+
+	Variable offsets:
+	
+
+	Method offsets:
+	
+
+"
+
+Inheritances:
+	
