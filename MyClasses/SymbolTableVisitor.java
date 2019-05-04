@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
-// SymbolTableVisitor populates the "symbols" object with information about classes, methods, parameters and variables
+// SymbolTableVisitor fills the "symbols" object with information about classes, methods, parameters and variables
 // it also checks for double declaration of classes, methods and variables
 public class SymbolTableVisitor extends GJDepthFirst<String, String[]> {
 
