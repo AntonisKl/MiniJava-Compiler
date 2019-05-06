@@ -99,6 +99,22 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       return;
    }
 
+   // checks if type is the same as originalType or a sub-type of originalType
+   private void checkReturnType(String type, String originalType, String lineInfo) throws TypeCheckingException {
+      String firstInheritedClassName = symbols.getFirstInheritedClassName(type);
+
+      if (firstInheritedClassName == null) { // is a primitive type
+         if (!originalType.equals(type)) {
+            throw new TypeCheckingException("Invalid return expression type -> Line:" + lineInfo);
+         }
+      } else { // is a class type
+         // check if one of the parent classes' name match
+         symbols.checkMatchParentClassTypes(type, originalType, lineInfo);
+      }
+
+      return;
+   }
+
    // END OF MY FUNCTIONS
 
    /**
@@ -321,9 +337,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f11.accept(this, argu);
 
       // check validity of return expression's type
-      if (!symbols.getMethodType(argu[0], id).equals(retType)) {
-         throw new TypeCheckingException("Invalid return expression type -> Line:" + n.f11.beginLine);
-      }
+      checkReturnType(retType, symbols.getMethodType(argu[0], id), Integer.toString(n.f11.beginLine));
 
       n.f12.accept(this, argu);
 
