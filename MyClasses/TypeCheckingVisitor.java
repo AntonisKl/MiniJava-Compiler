@@ -20,6 +20,8 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    // int curMethodParamIndex: curent index of method's parameter -> used for type checking of method's parameters and arguments
    // int curOffset: current offset's value
    int curMethodParamIndex, curOffset;
+   String vTableDeclarations, vTableMethodDeclarations, vTableCurMethodParamTypes;
+   Map<String, String> classVtableDeclerations; // used when we build the v-table declaration for a child class
 
    Symbols symbols;
 
@@ -27,6 +29,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
 
    public TypeCheckingVisitor(Symbols symbols) {
       this.symbols = symbols;
+      classVtableDeclerations = new HashMap<String, String>();
    }
 
    // returns the proper offset according to type argument
@@ -115,6 +118,19 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       return;
    }
 
+   String getIRType(String type) {
+      switch (type) {
+      case BOOLEAN:
+         return "i1";
+      case INT:
+         return "i32";
+      case INT_ARRAY:
+         return "i32*";
+      default:
+         return "i8*";
+      }
+   }
+
    // END OF MY FUNCTIONS
 
    /**
@@ -123,11 +139,11 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    * f2 -> <EOF>
    */
    public String visit(Goal n, String[] argu) {
-      String _ret = null;
+      vTableDeclarations = "";
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
       n.f2.accept(this, argu);
-      return _ret;
+      return vTableDeclarations;
    }
 
    /**
@@ -172,6 +188,11 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f15.accept(this, new String[] { METHOD, id2, CLASS, id1 });
       n.f16.accept(this, argu);
       n.f17.accept(this, argu);
+
+      String curVtableDecl = "@." + id1 + "_vtable = global [0 x i8*] []\n";
+      vTableDeclarations += curVtableDecl;
+      classVtableDeclerations.put(id1, curVtableDecl);
+
       return _ret;
    }
 
@@ -180,7 +201,8 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     *       | ClassExtendsDeclaration()
     */
    public String visit(TypeDeclaration n, String[] argu) {
-      return n.f0.accept(this, argu);
+      vTableDeclarations += (n.f0.accept(this, argu) + "\n");
+      return null;
    }
 
    /**
@@ -192,16 +214,24 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     * f5 -> "}"
     */
    public String visit(ClassDeclaration n, String[] argu) {
-      String _ret = null;
       n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
       curOffset = 0;
       n.f3.accept(this, new String[] { id });
       curOffset = 0;
+      vTableMethodDeclarations = "";
       n.f4.accept(this, new String[] { id });
+      if (n.f4.present()) {
+         vTableMethodDeclarations = vTableMethodDeclarations.substring(0, vTableMethodDeclarations.length() - 2); // remove last two characters: ", "
+      }
+
       n.f5.accept(this, argu);
-      return _ret;
+      String curVtableDecl = "@." + id + "_vtable = global [" + n.f4.size() + " x i8*] [" + vTableMethodDeclarations
+            + "]";
+      classVtableDeclerations.put(id, curVtableDecl);
+
+      return curVtableDecl;
    }
 
    /**
@@ -215,7 +245,6 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
     * f7 -> "}"
     */
    public String visit(ClassExtendsDeclaration n, String[] argu) {
-      String _ret = null;
       n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
@@ -252,9 +281,32 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       } else {
          curOffset = 0;
       }
+
+      vTableMethodDeclarations = ""; // declarations of methods that only exist in the current (child) class and NOT in the parent class
       n.f6.accept(this, new String[] { id });
+      if (!vTableMethodDeclarations.equals("")) {
+         vTableMethodDeclarations = vTableMethodDeclarations.substring(0, vTableMethodDeclarations.length() - 2); // remove last two characters: ", "
+      }
+
+      String parentVTableDecleration = classVtableDeclerations.get(id1);
+      String curVtableDecl = "";
+
+      curVtableDecl = parentVTableDecleration.replace(id1 + "_vtable", id + "_vtable");
+      String parentName = "@" + id1 + ".";
+      if (curVtableDecl.contains(parentName)) {
+         curVtableDecl = curVtableDecl.replaceAll(parentName, "@" + id + ".");
+      }
+
+      if (!vTableMethodDeclarations.equals("")) {
+         curVtableDecl = curVtableDecl.substring(0, curVtableDecl.length() - 1); // remove last character: "]"
+         curVtableDecl += (", " + vTableMethodDeclarations + "]");
+         curVtableDecl = curVtableDecl.replaceAll("([0-9]+) x i8*",
+               (vTableMethodDeclarations.split("\\),").length + symbols.classesMaps.get(id1).methodTypes.size())
+                     + " x i8*");
+      }
+
       n.f7.accept(this, argu);
-      return _ret;
+      return curVtableDecl;
    }
 
    /**
@@ -302,28 +354,33 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f3.accept(this, argu);
 
       boolean handleOffset = true;
-      String firstInheritedClassName = symbols.getFirstInheritedClassName(argu[0]);
-      String firstInheritedClassMethodName = null;
-      if (firstInheritedClassName != null) {
-         firstInheritedClassMethodName = symbols.getMethodType(firstInheritedClassName, id);
-      }
+      String[] foundClassNameAndMethodType = symbols.getLastInheritedMethodType(argu[0], id);
+      String foundInheritedClassName = foundClassNameAndMethodType == null ? null : foundClassNameAndMethodType[0];
+      String foundInheritedClassMethodType = foundClassNameAndMethodType == null ? null
+            : foundClassNameAndMethodType[1];
+      // if (foundInheritedClassName != null) {
+      //    foundInheritedClassMethodType = symbols.getMethodType(foundInheritedClassName, id);
+      // }
 
-      if (firstInheritedClassMethodName != null) {
+      if (foundInheritedClassMethodType != null) {
          // compare method's type with the original method's declaration type 
-         if (!symbols.getMethodType(argu[0], id).equals(firstInheritedClassMethodName)) {
+         if (!symbols.getMethodType(argu[0], id).equals(foundInheritedClassMethodType)) {
             throw new TypeCheckingException("Invalid method type in child class -> Line:" + n.f3.beginLine);
          }
          // should not add an entry to method offsets' map
          handleOffset = false;
       }
 
-      if (firstInheritedClassMethodName != null && n.f4.present()) {
-         // check parameters' number and types
-         n.f4.accept(this, new String[] { CLASS, argu[0], METHOD, id, CLASS, firstInheritedClassName });
+      vTableCurMethodParamTypes = "i8*, "; // for "this" pointer
+      if (n.f4.present()) {
+         // check parameters' number and types and gather param types for v-table declaration
+         n.f4.accept(this, new String[] { CLASS, argu[0], METHOD, id, CLASS, foundInheritedClassName });
       }
+      vTableCurMethodParamTypes = vTableCurMethodParamTypes.substring(0, vTableCurMethodParamTypes.length() - 2); // remove last two characters: ", "
+
       // check parameters' number
-      if (firstInheritedClassMethodName != null && !n.f4.present()
-            && symbols.getMethodParamsNum(firstInheritedClassName, id, Integer.toString(n.f5.beginLine)) > 0) {
+      if (foundInheritedClassMethodType != null && !n.f4.present()
+            && symbols.getMethodParamsNum(foundInheritedClassName, id, Integer.toString(n.f5.beginLine)) > 0) {
          throw new TypeCheckingException("Invalid parameters number -> Line:" + n.f3.beginLine);
       }
 
@@ -348,6 +405,12 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          curOffset += getOffsetPerType("method");
       }
 
+      if (foundInheritedClassMethodType == null) {
+         vTableMethodDeclarations += "i8* bitcast (" + getIRType(retType) + " (" + vTableCurMethodParamTypes + ")* @"
+               + argu[0] + "." + id + " to i8*), "; // add entry to v-table string
+         System.out.println("hi :" + vTableMethodDeclarations);
+      }
+
       return _ret;
    }
 
@@ -358,7 +421,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    // argu[0]: "class", argu[1]: name of current class, argu[2]: "method", argu[3]: name of declared method, argu[4]: "class", argu[5]: name of first inherited class
    public String visit(FormalParameterList n, String[] argu) throws TypeCheckingException {
 
-      if (symbols.getMethodParamsNum(argu[5], argu[3], null) == 0) {
+      if (argu[5] != null && symbols.getMethodParamsNum(argu[5], argu[3], null) == 0) {
          throw new TypeCheckingException("Invalid parameters number -> Line: N/A");
       }
 
@@ -368,8 +431,12 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
 
       String paramType = n.f0.accept(this, argu);
 
-      // do type-checking for the first parameter
-      checkParamType(paramType, argu[5], argu[3], null);
+      if (argu[5] != null) {
+         // do type-checking for the first parameter
+         checkParamType(paramType, argu[5], argu[3], null);
+      }
+
+      vTableCurMethodParamTypes += (getIRType(paramType) + ", ");
 
       n.f1.accept(this, argu);
       return _ret;
@@ -407,14 +474,16 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f0.accept(this, argu);
 
       // check if parameter's number exceeded the correct one
-      if (curMethodParamIndex >= symbols.getMethodParamsNum(argu[5], argu[3], Integer.toString(n.f0.beginLine))) {
+      if (argu[5] != null /* if there is at a valid first inherited method */ && curMethodParamIndex >= symbols.getMethodParamsNum(argu[5], argu[3], Integer.toString(n.f0.beginLine))) {
          throw new TypeCheckingException("Invalid parameters number -> Line:" + n.f0.beginLine);
       }
 
       String expType = n.f1.accept(this, argu);
 
-      // do type-checking for current parameter
-      checkParamType(expType, argu[5], argu[3], null);
+      if (argu[5] != null) { // if there is at a valid first inherited method
+         // do type-checking for current parameter
+         checkParamType(expType, argu[5], argu[3], null);
+      }
 
       return _ret;
    }

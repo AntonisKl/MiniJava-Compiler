@@ -19,34 +19,34 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     // MY FUNCTIONS
 
     public IRCodeGenVisitor(Symbols symbols) {
-       this.symbols = symbols;
+        this.symbols = symbols;
+    }
+
+    String getIRType(String type) {
+        switch (type) {
+        case BOOLEAN:
+            return "i1";
+        case INT:
+            return "i32";
+        case INT_ARRAY:
+            return "i32*";
+        default:
+            return "i8*";
+        }
     }
 
     String buildVarDeclaration(String id, String type) {
-      String retValue = "%"+id+" = alloca ";
-
-      switch (type) {
-        case BOOLEAN:
-          retValue+="i1";
-        case INT:
-          retValue+="i32";
-        case INT_ARRAY:
-          retValue+="i32*";
-        default:
-          retValue+="i8*";
-      }
-
-      return retValue;
+        return "%" + id + " = alloca " + getIRType(type);
     }
 
     // String buildVtablesDeclaration() {
     //   Map<String, ClassMaps> classesMaps = symbols.classesMaps;
     //
     //   Iterator<Entry<String, ClassMaps>> iter = map.entrySet().iterator();
-  	// 	while (iter.hasNext()) {
-  	// 		Entry<String, ClassMaps> entry = iter.next();
-  	// 		classesMaps.get(entry.getKey()).
-  	// 	}
+    // 	while (iter.hasNext()) {
+    // 		Entry<String, ClassMaps> entry = iter.next();
+    // 		classesMaps.get(entry.getKey()).
+    // 	}
     //
     // }
 
@@ -90,28 +90,28 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f17 -> "}"
      */
     public String visit(MainClass n, String[] argu) throws TypeCheckingException {
-       String _ret = null;
+        String _ret = null;
 
-       n.f0.accept(this, argu);
-       String id1 = n.f1.accept(this, argu);
-       n.f2.accept(this, argu);
-       n.f3.accept(this, argu);
-       n.f4.accept(this, argu);
-       n.f7.accept(this, argu);
-       n.f8.accept(this, argu);
-       n.f9.accept(this, argu);
-       n.f10.accept(this, argu);
-       n.f11.accept(this, argu);
-       n.f12.accept(this, argu);
-       n.f13.accept(this, argu);
+        n.f0.accept(this, argu);
+        String id1 = n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        n.f7.accept(this, argu);
+        n.f8.accept(this, argu);
+        n.f9.accept(this, argu);
+        n.f10.accept(this, argu);
+        n.f11.accept(this, argu);
+        n.f12.accept(this, argu);
+        n.f13.accept(this, argu);
 
-       // add entries to maps for the main method of the main class
-       String id2 = "main", type = "void";
-       n.f14.accept(this, new String[] { METHOD, id2, CLASS, id1 }); // pass the necessary arguments
-       n.f15.accept(this, argu);
-       n.f16.accept(this, argu);
-       n.f17.accept(this, argu);
-       return _ret;
+        // add entries to maps for the main method of the main class
+        String id2 = "main", type = "void";
+        n.f14.accept(this, new String[] { METHOD, id2, CLASS, id1 }); // pass the necessary arguments
+        n.f15.accept(this, argu);
+        n.f16.accept(this, argu);
+        n.f17.accept(this, argu);
+        return _ret;
     }
 
     /**
@@ -119,7 +119,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      *       | ClassExtendsDeclaration()
      */
     public String visit(TypeDeclaration n, String[] argu) {
-       return n.f0.accept(this, argu);
+        return n.f0.accept(this, argu);
     }
 
     /**
@@ -131,14 +131,14 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f5 -> "}"
      */
     public String visit(ClassDeclaration n, String[] argu) throws TypeCheckingException {
-       String _ret = null;
-       n.f0.accept(this, argu);
-       String id = n.f1.accept(this, argu);
-       n.f2.accept(this, argu);
-       n.f3.accept(this, new String[] { CLASS, id });
-       n.f4.accept(this, new String[] { id });
-       n.f5.accept(this, argu);
-       return _ret;
+        String _ret = null;
+        n.f0.accept(this, argu);
+        String id = n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        n.f3.accept(this, new String[] { CLASS, id });
+        n.f4.accept(this, new String[] { id });
+        n.f5.accept(this, argu);
+        return _ret;
     }
 
     /**
@@ -152,17 +152,17 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f7 -> "}"
      */
     public String visit(ClassExtendsDeclaration n, String[] argu) throws TypeCheckingException {
-       String _ret = null;
-       n.f0.accept(this, argu);
-       String id1 = n.f1.accept(this, argu);
-       n.f2.accept(this, argu);
-       String id2 = n.f3.accept(this, argu);
+        String _ret = null;
+        n.f0.accept(this, argu);
+        String id1 = n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        String id2 = n.f3.accept(this, argu);
 
-       n.f4.accept(this, argu);
-       n.f5.accept(this, new String[] { CLASS, id1 });
-       n.f6.accept(this, new String[] { id1 });
-       n.f7.accept(this, argu);
-       return _ret;
+        n.f4.accept(this, argu);
+        n.f5.accept(this, new String[] { CLASS, id1 });
+        n.f6.accept(this, new String[] { id1 });
+        n.f7.accept(this, argu);
+        return _ret;
     }
 
     /**
@@ -172,19 +172,19 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      */
     // argu[0]: "class", argu[1]: name of class OR argu[0]: "method", argu[1]: name of method argu[2]: "class", argu[3]: name of class
     public String visit(VarDeclaration n, String[] argu) throws TypeCheckingException {
-       String retCode = "";
-       String type = n.f0.accept(this, argu);
-       String id = n.f1.accept(this, argu);
-       n.f2.accept(this, argu);
+        String retCode = "";
+        String type = n.f0.accept(this, argu);
+        String id = n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
 
-       if (argu[0].equals(CLASS)) { // we are inside a class
+        if (argu[0].equals(CLASS)) { // we are inside a class
 
-       } else if (argu[0].equals(METHOD)) { // we are inside a method which is inside a class
+        } else if (argu[0].equals(METHOD)) { // we are inside a method which is inside a class
 
-         retCode += buildVarDeclaration(id, type);
-       }
+            retCode += buildVarDeclaration(id, type);
+        }
 
-       return retCode;
+        return retCode;
 
     }
 
@@ -206,29 +206,29 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
     // argu[0]: class name
     public String visit(MethodDeclaration n, String[] argu) throws TypeCheckingException {
-       String _ret = null;
+        String _ret = null;
 
-       curLocalVarIndex = 0; // reset local variable index
+        curLocalVarIndex = 0; // reset local variable index
 
-       n.f0.accept(this, argu);
-       String type = n.f1.accept(this, argu);
-       String id = n.f2.accept(this, argu);
-       n.f3.accept(this, argu);
+        n.f0.accept(this, argu);
+        String type = n.f1.accept(this, argu);
+        String id = n.f2.accept(this, argu);
+        n.f3.accept(this, argu);
 
-       if (symbols.inheritances.get(argu[0]) == null) { // no inherited classes
+        if (symbols.inheritances.get(argu[0]) == null) { // no inherited classes
 
-       }
+        }
 
-       n.f4.accept(this, new String[] { METHOD, id, CLASS, argu[0] });
-       n.f5.accept(this, argu);
-       n.f6.accept(this, argu);
-       n.f7.accept(this, new String[] { METHOD, id, CLASS, argu[0] });
-       n.f8.accept(this, argu);
-       n.f9.accept(this, argu);
-       n.f10.accept(this, argu);
-       n.f11.accept(this, argu);
-       n.f12.accept(this, argu);
-       return _ret;
+        n.f4.accept(this, new String[] { METHOD, id, CLASS, argu[0] });
+        n.f5.accept(this, argu);
+        n.f6.accept(this, argu);
+        n.f7.accept(this, new String[] { METHOD, id, CLASS, argu[0] });
+        n.f8.accept(this, argu);
+        n.f9.accept(this, argu);
+        n.f10.accept(this, argu);
+        n.f11.accept(this, argu);
+        n.f12.accept(this, argu);
+        return _ret;
     }
 
     /**

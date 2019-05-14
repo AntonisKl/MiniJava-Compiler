@@ -26,4 +26,7 @@ class Derived extends Base {
 		data = x * 2;
 		return data;
 	}
+	public int getDif(int b, boolean a) {
+		return data;
+	}
 }

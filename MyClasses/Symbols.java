@@ -159,6 +159,19 @@ public class Symbols {
 		return null; // will not happen
 	}
 
+	public String[] getLastInheritedMethodType(String className, String methodName) {
+		String curClassName = inheritances.get(className);
+		while (curClassName != null) {
+
+			String curMethodType = getMethodType(curClassName, methodName);
+			if (curMethodType != null)
+				return new String[] { curClassName, curMethodType };
+
+			curClassName = inheritances.get(curClassName);
+		}
+		return null;
+	}
+
 	// String className: name of class to check its parent classes
 	// String type: type to be matched
 	// compares the names of the parent classes with the type given as argument

@@ -18,7 +18,7 @@ class Main {
 			try {
 				// construct output file path and create it if it does not exist
 				String[] filePathParts = arg.split("/");
-				String outFilePath = "results/" + filePathParts[filePathParts.length - 1].replace(".java", ".txt");
+				String outFilePath = "results/" + filePathParts[filePathParts.length - 1].replace(".java", ".ll");
 				File outFile = new File(outFilePath);
 				outFile.getParentFile().mkdirs();
 				outFile.createNewFile();
@@ -55,10 +55,10 @@ class Main {
 				}
 
 				TypeCheckingVisitor typeCheckingVisitor = new TypeCheckingVisitor(symbols);
-				String typeCheckingErrorMsg = null;
+				String typeCheckingErrorMsg = null, IRCode = "";
 				try {
 					// do type-checking
-					root.accept(typeCheckingVisitor, null);
+					IRCode += root.accept(typeCheckingVisitor, null);
 				} catch (TypeCheckingException e) {
 					StringWriter sw = new StringWriter();
 					e.printStackTrace(new PrintWriter(sw));
@@ -68,8 +68,10 @@ class Main {
 				if (typeCheckingErrorMsg == null) { // all went OK
 					System.out.println("Semantic check completed successfully");
 
-					// print offsets to file
-					outStream.write(symbols.toString().getBytes());
+					// // print offsets to file
+					// outStream.write(symbols.toString().getBytes());
+					System.out.println(IRCode);
+					outStream.write(IRCode.getBytes());
 				} else { // error
 					System.out.println("Semantic check completed with an error");
 
