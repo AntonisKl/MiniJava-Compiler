@@ -46,11 +46,13 @@ define i32 @BT.Start(i8* %this) {
 	
 	%nti = alloca i32
 	
-	%_0 = call i8* @calloc(i32 1, i32 38)
+	; create new object
+	%_0 = call i8* @calloc(i32 1, i32 38) ; 30 bytes(fields) + 8 bytes(v-table pointer)
 	%_1 = bitcast i8* %_0 to i8***
 	%_2 = getelementptr [20 x i8*], [20 x i8*]* @.Tree_vtable, i32 0, i32 0
 	store i8** %_2, i8*** %_1
-	store i8* %_0, i8** %root
+
+	store i8* %_0, i8** %root ; build assignment function
 	
 	%_3 = load i8*, i8** %root
 	; Tree.Init : 0

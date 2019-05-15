@@ -5,9 +5,12 @@ class Overload1 {
 
 }
 class A {	
+  int i;
     public A foo() {
       return (new B());
       }
     }
       
-  class B extends A {}
+  class B extends A {
+    int i;
+  }

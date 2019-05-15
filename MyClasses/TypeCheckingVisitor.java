@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Iterator;
 
+// TypeCheckingVisitor does type-checking and creates and returns the IR v-table declarations
 public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
 
    // these are used as defines

@@ -169,7 +169,8 @@ public class Symbols {
 
 			curClassName = inheritances.get(curClassName);
 		}
-		return null;
+
+		return null; // method's type not found
 	}
 
 	// String className: name of class to check its parent classes
@@ -202,6 +203,32 @@ public class Symbols {
 		}
 
 		return returnValue;
+	}
+
+	public Integer getVarOffset(String id, String className) {
+		String curClassName = className;
+		while (curClassName != null) {
+			Integer curVarOffset = classesMaps.get(curClassName).varOffsets.get(id);
+			if (curVarOffset != null)
+				return curVarOffset;
+
+			curClassName = inheritances.get(curClassName);
+		}
+
+		return null; // variable's offset not found
+	}
+
+	public Integer getMethodOffset(String id, String className) {
+		String curClassName = className;
+		while (curClassName != null) {
+			Integer curMethodOffset = classesMaps.get(curClassName).methodOffsets.get(id);
+			if (curMethodOffset != null)
+				return curMethodOffset;
+
+			curClassName = inheritances.get(curClassName);
+		}
+
+		return null; // variable's offset not found
 	}
 
 	@Override

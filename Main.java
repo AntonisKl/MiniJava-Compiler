@@ -2,6 +2,7 @@ import syntaxtree.*;
 import visitor.*;
 import java.io.*;
 import MyClasses.Symbols;
+import MyClasses.IRCodeGenVisitor;
 import MyClasses.TypeCheckingVisitor;
 import MyClasses.SymbolTableVisitor;
 import MyClasses.TypeCheckingException;
@@ -58,7 +59,7 @@ class Main {
 				String typeCheckingErrorMsg = null, IRCode = "";
 				try {
 					// do type-checking
-					IRCode += root.accept(typeCheckingVisitor, null);
+					IRCode += root.accept(typeCheckingVisitor, null) + "\n\n";
 				} catch (TypeCheckingException e) {
 					StringWriter sw = new StringWriter();
 					e.printStackTrace(new PrintWriter(sw));
@@ -70,13 +71,23 @@ class Main {
 
 					// // print offsets to file
 					// outStream.write(symbols.toString().getBytes());
-					System.out.println(IRCode);
-					outStream.write(IRCode.getBytes());
+					
 				} else { // error
 					System.out.println("Semantic check completed with an error");
 
 					outStream.write(typeCheckingErrorMsg.getBytes());
+					continue;
 				}
+
+				// System.out.println(IRCode);
+
+				IRCodeGenVisitor irCodeGenVisitor = new IRCodeGenVisitor(symbols);
+				IRCode += root.accept(irCodeGenVisitor, null);
+
+				outStream.write(IRCode.getBytes());
+
+				System.out.println(IRCode);
+
 
 			} catch (ParseException ex) {
 				System.out.println(ex.getMessage());

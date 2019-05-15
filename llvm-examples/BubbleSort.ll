@@ -355,11 +355,16 @@ loop2:
 define i32 @BBS.Init(i8* %this, i32 %.sz) {
 	%sz = alloca i32
 	store i32 %.sz, i32* %sz
+
+
 	%_0 = load i32, i32* %sz
+
 	%_1 = getelementptr i8, i8* %this, i32 16
 	%_2 = bitcast i8* %_1 to i32*
+	
 	store i32 %_0, i32* %_2
 	
+
 	%_9 = load i32, i32* %sz
 	%_6 = icmp slt i32 %_9, 0
 	br i1 %_6, label %arr_alloc7, label %arr_alloc8
