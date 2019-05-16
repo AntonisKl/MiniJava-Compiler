@@ -412,7 +412,9 @@ define i8* @List.Delete(i8* %this, i8* %.e) {
 
 loop7:
 	%_11 = load i1, i1* %var_end
-	%_10 = xor i1 1, %_11
+	%_10 = xor i1 1, %_11 ; not
+
+	; start of and clause
 	br label %andclause13
 
 andclause13:
@@ -420,7 +422,9 @@ andclause13:
 
 andclause14:
 	%_18 = load i1, i1* %ret_val
+	
 	%_17 = xor i1 1, %_18
+
 	br label %andclause15
 
 andclause15:

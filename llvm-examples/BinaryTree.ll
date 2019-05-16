@@ -369,13 +369,17 @@ define i1 @Tree.Compare(i8* %this, i32 %.num1, i32 %.num2) {
 	
 	store i1 0, i1* %ntb
 	
-	%_0 = load i32, i32* %num2
+	%_0 = load i32, i32* %num2 ; primary expression will take care of this
+
 	%_1 = add i32 %_0, 1
-	store i32 %_1, i32* %nti
+
+	store i32 %_1, i32* %nti ; build assigment function
 	
 	%_5 = load i32, i32* %num1
 	%_6 = load i32, i32* %num2
-	%_7 = icmp slt i32 %_5, %_6
+
+	%_7 = icmp slt i32 %_5, %_6 ; compare expression
+	
 	br i1 %_7, label %if2, label %if3
 
 if2:

@@ -12,8 +12,9 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     final static String INT = "int";
     final static String INT_ARRAY = "int[]";
 
-    int curLocalVarIndex;
+    int curLocalVarIndex, curArrayAllocLabelIndex = 0, curAndClauseLabelIndex = 0;
     String curMethodParams, curMethodVarDeclarations, methodDeclarations, curMethodStatements;
+    // boolean curExpIsRightOfAndExp = false;
 
     Symbols symbols;
 
@@ -54,29 +55,177 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         return offset + 8;
     }
 
-    String createIRVarName(String id, String className, String methodName) {
+    String getNextLocalVarName() {
+        return "%_" + (curLocalVarIndex++);
+    }
+
+    String getNextArrayAllocLabelName() {
+        return "arr_alloc" + (curArrayAllocLabelIndex++);
+    }
+
+    String getNextAndClauseLabelName() {
+        return "and_clause" + (curAndClauseLabelIndex++);
+    }
+
+    String createIRVarName(String id, String className, String methodName, boolean isLeftValue) {
         String foundMethodVarType = symbols.getVarType(id, className, methodName, null, false), IRVarName = null;
 
         if (foundMethodVarType != null) { // variable is local
-            String IRType = getIRType(foundMethodVarType); //symbols.getVarType(id, className, methodName, null, true)
-            // %_0 = load i32, i32* %sz
-            IRVarName = "%_" + (curLocalVarIndex++);
-            curMethodStatements += ("\t" + IRVarName + " = load " + IRType + ", " + IRType + "* %" + id + "\n");
-            // curLocalVarIndex++;
+            if (isLeftValue) { // left value of assignment
+                IRVarName = "%_" + id;
+            } else { // not a left value of assignment
+                String IRType = getIRType(foundMethodVarType); //symbols.getVarType(id, className, methodName, null, true)
+                // %_0 = load i32, i32* %sz
+                IRVarName = getNextLocalVarName();
+                curMethodStatements += ("\t" + IRVarName + " = load " + IRType + ", " + IRType + "* %" + id + "\n");
+                // curLocalVarIndex++;
+            }
         } else { // variable belongs to the class scope
             foundMethodVarType = symbols.getVarType(id, className, methodName, null, true);
             String IRType = getIRType(foundMethodVarType); //symbols.getVarType(id, className, methodName, null, true)
             // %_1 = getelementptr i8, i8* %this, i32 16
             // %_2 = bitcast i8* %_1 to i32*
-            curMethodStatements += ("\t%_" + (curLocalVarIndex++) + " = getelementptr i8, i8* %this, " + IRType + " "
+            curMethodStatements += ("\t" + getNextLocalVarName() + " = getelementptr i8, i8* %this, " + IRType + " "
                     + getVTableOffset(symbols.getVarOffset(id, className)) + "\n");
-            IRVarName = "%_" + (curLocalVarIndex++);
+            IRVarName = getNextLocalVarName();
             curMethodStatements += ("\t" + IRVarName + " = bitcast i8* %_" + (curLocalVarIndex - 2) + " to " + IRType
                     + "\n");
         }
 
         return IRVarName;
     }
+
+    String createNewObject(String className) {
+        // %_0 = call i8* @calloc(i32 1, i32 38) ; 30 bytes(fields) + 8 bytes(v-table pointer)
+        // %_1 = bitcast i8* %_0 to i8***
+        // %_2 = getelementptr [20 x i8*], [20 x i8*]* @.Tree_vtable, i32 0, i32 0
+        // store i8** %_2, i8*** %_1
+
+        String var1 = getNextLocalVarName(), var2 = getNextLocalVarName(), var3 = getNextLocalVarName();
+        int vTableSize = symbols.classesVTableSizes.get(className);
+
+        curMethodStatements += (var1 + " = call i8* @calloc(i32 1, i32 " + symbols.getSizeOfFieldsInBytes(className)
+                + ")\n");
+        curMethodStatements += (var2 + " = bitcast i8* " + var1 + " to i8***\n");
+        curMethodStatements += (var3 + " = getelementptr [" + vTableSize + " x i8*], [" + vTableSize + " x i8*]* @."
+                + className + "_vtable, i32 0, i32 0\n");
+        curMethodStatements += ("store i8** " + var3 + ", i8*** " + var2 + "\n\n");
+
+        return var1;
+    }
+
+    String createNewArray(String expResult) {
+        //     ; start of array allocation
+        //     %_9 = load i32, i32* %sz
+        //     %_6 = icmp slt i32 %_9, 0
+        //     br i1 %_6, label %arr_alloc7, label %arr_alloc8
+
+        // arr_alloc7:
+        //     ; out of bounds
+        //     call void @throw_oob()
+        //     br label %arr_alloc8
+
+        // arr_alloc8:
+        //     ; actual array allocation
+        //     %_3 = add i32 %_9, 1
+        //     %_4 = call i8* @calloc(i32 4, i32 %_3)
+        //     %_5 = bitcast i8* %_4 to i32*
+        //     store i32 %_9, i32* %_5      ; store size of array in the first position of array
+        //     ; end of actual array allocation
+
+        String labelName1 = getNextArrayAllocLabelName(), labelName2 = getNextArrayAllocLabelName();
+        String[] varNames = new String[5];
+
+        curMethodStatements += (varNames[0] + " = load i32, i32* " + expResult + "\n");
+        curMethodStatements += (varNames[1] + " = icmp slt i32 " + varNames[0] + ", 0\n");
+        curMethodStatements += ("br i1 " + varNames[1] + ", label %" + labelName1 + ", label %" + labelName2 + "\n\n");
+        curMethodStatements += (labelName1 + ":\n");
+        curMethodStatements += "\tcall void @throw_oob()\n";
+        curMethodStatements += ("\tbr label " + labelName2 + "\n\n");
+
+        curMethodStatements += (labelName2 + ":\n");
+        curMethodStatements += ("\t" + varNames[2] + " = add i32 " + varNames[0] + ", 1\n");
+        curMethodStatements += ("\t" + varNames[3] + " = call i8* @calloc(i32 4, i32 " + varNames[2] + "\n");
+        curMethodStatements += ("\t" + varNames[4] + " = bitcast i8* " + varNames[3] + " to i32*");
+        curMethodStatements += ("\tstore i32 " + varNames[0] + ", i32* " + varNames[4] + "\n");
+
+        return varNames[4]; // IR variable that has contains the array
+    }
+
+    String buildSimpleExpression(String expResult1, String symbol, String expResult2) {
+        String IRVarName = getNextLocalVarName();
+        switch (symbol) {
+        case "+":
+            // %_1 = add i32 %_0, 1
+            curMethodStatements += (IRVarName + " = add i32 " + expResult1 + ", " + expResult2 + "\n");
+            break;
+        case "-":
+            curMethodStatements += (IRVarName + " = sub i32 " + expResult1 + ", " + expResult2 + "\n");
+            break;
+        case "*":
+            curMethodStatements += (IRVarName + " = mul i32 " + expResult1 + ", " + expResult2 + "\n");
+            break;
+        case "<":
+            // %_7 = icmp slt i32 %_5, %_6
+            curMethodStatements += (IRVarName + " = icmp slt i32 " + expResult1 + ", " + expResult2 + "\n");
+            break;
+        }
+
+        return IRVarName;
+    }
+
+    String buildNotExpression(String expResult) {
+        String IRVarName = getNextLocalVarName();
+        curMethodStatements += (IRVarName + " = icmp ne i1 " + expResult + ", 1\n");
+
+        return IRVarName;
+    }
+
+    String buildArrayLengthExpression(String expResult) {
+        // %_0 = getelementptr i32, i32* %ptr, i32 %idx
+        // %_1 = load i32, i32* %_0
+
+        String varName1 = getNextLocalVarName(), varName2 = getNextLocalVarName();
+        curMethodStatements += (varName1 + " = getelementptr i32, i32* " + expResult + ", i32 0\n");
+        curMethodStatements += (varName2 + " = load i32, i32* " + varName1 + "\n");
+
+        return varName2;
+    }
+
+    // String buildAndExpression(String expResult1, String expResult2) {
+    //     // %_10 = xor i1 1, %_11 ; %_10 = expResult1
+
+    //     // ; start of and clause
+    //     // br label %andclause13
+
+    //     // andclause13:
+    //     //     br i1 %_10, label %andclause14, label %andclause16
+
+    //     // andclause14:
+    //     //     %_18 = load i1, i1* %ret_val
+    //     //     %_17 = xor i1 1, %_18  ; %_17 expResult2
+
+    //     //     br label %andclause15
+
+    //     // andclause15:
+    //     //     br label %andclause16
+
+    //     // andclause16:
+    //     //     %_12 = phi i1 [ 0, %andclause13 ], [ %_17, %andclause15 ]
+    //     //     br i1 %_12, label %loop8, label %loop9
+
+    //     String varName = getNextLocalVarName();
+    //     String[] labelNames = new String[4];
+    //     for (int i = 0; i < 4; i++) {
+    //         labelNames = getNextAndClauseLabelName()
+    //     }
+
+    //     curMethodStatements += ("br label %" + labelNames[0] + "\n\n");
+    //     curMethodStatements += (labelNames[0] + ":\n");
+    //     curMethodStatements += ("\tbr i1 " + expResult1 + ", label %" + labelNames[1] + ", label %" + labelNames[3] + "\n\n");
+    //     curMethodStatements += (labelNames[1] + ":\n");
+    //     curMethodStatements += ("\t" + varNames[0] + " = " )
+    // }
 
     String buildAssignmentStatement(String value, String id, String type) {
         // String valueToBeStored = stringIsIntOrBoolean(value) ? value : "%" + value;
@@ -454,7 +603,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         n.f3.accept(this, argu);
 
         // String firstInheritedClassName = symbols.getFirstInheritedClassName(expResult);
-        String IRId = createIRVarName(id, argu[3], argu[1]);
+        String IRId = createIRVarName(id, argu[3], argu[1], true);
 
         // if (stringIsIntOrBoolean(expResult)) { // is a primitive type
         curMethodStatements += buildAssignmentStatement(expResult, IRId, idType);
@@ -570,12 +719,53 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> Clause()
      */
     public String visit(AndExpression n, String[] argu) throws TypeCheckingException {
-        String type1 = n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        String type2 = n.f2.accept(this, argu);
+        // %_10 = xor i1 1, %_11 ; %_10 = expResult1
 
-        // return proper expression's type
-        return BOOLEAN;
+        // ; start of and clause
+        // br label %andclause13
+
+        // andclause13:
+        //     br i1 %_10, label %andclause14, label %andclause16
+
+        // andclause14:
+        //     %_18 = load i1, i1* %ret_val
+        //     %_17 = xor i1 1, %_18  ; %_17 expResult2
+
+        //     br label %andclause15
+
+        // andclause15:
+        //     br label %andclause16
+
+        // andclause16:
+        //     %_12 = phi i1 [ 0, %andclause13 ], [ %_17, %andclause15 ]
+
+        String varName = getNextLocalVarName();
+        String[] labelNames = new String[4];
+        for (int i = 0; i < 4; i++) {
+            labelNames[i] = getNextAndClauseLabelName();
+        }
+
+        String clauseResult1 = n.f0.accept(this, argu);
+
+        curMethodStatements += ("br label %" + labelNames[0] + "\n\n");
+        curMethodStatements += (labelNames[0] + ":\n");
+        curMethodStatements += ("\tbr i1 " + clauseResult1 + ", label %" + labelNames[1] + ", label %" + labelNames[3]
+                + "\n\n");
+        curMethodStatements += (labelNames[1] + ":\n");
+
+        n.f1.accept(this, argu);
+
+        // curExpIsRightOfAndExp = true;
+        String clauseResult2 = n.f2.accept(this, argu);
+
+        curMethodStatements += ("\tbr label " + labelNames[2] + "\n");
+        curMethodStatements += (labelNames[2] + ":\n");
+        curMethodStatements += ("\tbr label " + labelNames[3] + "\n");
+        curMethodStatements += (labelNames[3] + ":\n");
+        curMethodStatements += ("\t" + varName + " = phi i1 [ 0, %" + labelNames[0] + " ], [ " + clauseResult2 + ", %"
+                + labelNames[2] + "\n");
+
+        return varName; // return IR variable that contains the result
     }
 
     /**
@@ -584,11 +774,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> PrimaryExpression()
      */
     public String visit(CompareExpression n, String[] argu) throws TypeCheckingException {
-        String type1 = n.f0.accept(this, argu);
+        String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
-        String type2 = n.f2.accept(this, argu);
+        String expResult2 = n.f2.accept(this, argu);
 
-        return BOOLEAN;
+        return buildSimpleExpression(expResult1, "<", expResult2);
     }
 
     /**
@@ -597,11 +787,12 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> PrimaryExpression()
      */
     public String visit(PlusExpression n, String[] argu) throws TypeCheckingException {
-        String type1 = n.f0.accept(this, argu);
+        String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
-        String type2 = n.f2.accept(this, argu);
+        String expResult2 = n.f2.accept(this, argu);
 
-        return INT;
+        return buildSimpleExpression(expResult1, "+", expResult2);
+
     }
 
     /**
@@ -610,11 +801,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> PrimaryExpression()
      */
     public String visit(MinusExpression n, String[] argu) throws TypeCheckingException {
-        String type1 = n.f0.accept(this, argu);
+        String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
-        String type2 = n.f2.accept(this, argu);
+        String expResult2 = n.f2.accept(this, argu);
 
-        return INT;
+        return buildSimpleExpression(expResult1, "-", expResult2);
     }
 
     /**
@@ -623,11 +814,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> PrimaryExpression()
      */
     public String visit(TimesExpression n, String[] argu) throws TypeCheckingException {
-        String type1 = n.f0.accept(this, argu);
+        String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
-        String type2 = n.f2.accept(this, argu);
+        String expResult2 = n.f2.accept(this, argu);
 
-        return INT;
+        return buildSimpleExpression(expResult1, "*", expResult2);
     }
 
     /**
@@ -654,11 +845,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> "length"
      */
     public String visit(ArrayLength n, String[] argu) throws TypeCheckingException {
-        String type = n.f0.accept(this, argu);
+        String expResult = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         n.f2.accept(this, argu);
 
-        return INT;
+        return buildArrayLengthExpression(expResult);
     }
 
     /**
@@ -762,9 +953,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
         switch (choiceId) {
         case 3: // identifier
-            return createIRVarName(choice, argu[3], argu[1]);
-        case 4: // this
-            return "%" + choice;
+            return createIRVarName(choice, argu[3], argu[1], false);
         // 7: choice is the result of the expression that is inside brackets
         default:
             return choice;
@@ -784,14 +973,14 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f0 -> "true"
      */
     public String visit(TrueLiteral n, String[] argu) {
-        return n.f0.toString();
+        return "1";
     }
 
     /**
      * f0 -> "false"
      */
     public String visit(FalseLiteral n, String[] argu) {
-        return n.f0.toString();
+        return "0";
     }
 
     /**
@@ -807,7 +996,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f0 -> "this"
      */
     public String visit(ThisExpression n, String[] argu) {
-        return n.f0.toString();
+        return "%" + n.f0.toString();
     }
 
     /**
@@ -821,10 +1010,10 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         n.f2.accept(this, argu);
-        n.f3.accept(this, argu);
+        String expResult = n.f3.accept(this, argu);
         n.f4.accept(this, argu);
 
-        return INT_ARRAY;
+        return createNewArray(expResult);
     }
 
     /**
@@ -839,7 +1028,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         n.f2.accept(this, argu);
         n.f3.accept(this, argu);
 
-        return id;
+        return createNewObject(id);
     }
 
     /**
@@ -848,7 +1037,8 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      */
     public String visit(NotExpression n, String[] argu) {
         n.f0.accept(this, argu);
-        return n.f1.accept(this, argu); // return clause's type
+        String clauseResult = n.f1.accept(this, argu);
+        return buildNotExpression(clauseResult); // return clause's result
     }
 
     /**
@@ -858,8 +1048,8 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      */
     public String visit(BracketExpression n, String[] argu) {
         n.f0.accept(this, argu);
-        String expRet = n.f1.accept(this, argu);
+        String expResult = n.f1.accept(this, argu);
         n.f2.accept(this, argu);
-        return expRet; // return expression's type
+        return expResult; // return expression's type
     }
 }

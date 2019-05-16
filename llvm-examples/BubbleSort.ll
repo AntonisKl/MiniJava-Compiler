@@ -364,23 +364,31 @@ define i32 @BBS.Init(i8* %this, i32 %.sz) {
 	
 	store i32 %_0, i32* %_2
 	
-
+	
+	; start of array allocation
 	%_9 = load i32, i32* %sz
 	%_6 = icmp slt i32 %_9, 0
 	br i1 %_6, label %arr_alloc7, label %arr_alloc8
 
 arr_alloc7:
+	; out of bounds
 	call void @throw_oob()
 	br label %arr_alloc8
 
 arr_alloc8:
+	; actual array allocation
 	%_3 = add i32 %_9, 1
 	%_4 = call i8* @calloc(i32 4, i32 %_3)
 	%_5 = bitcast i8* %_4 to i32*
 	store i32 %_9, i32* %_5
+	; end of actual array allocation
+
+	; getIRVarName function
 	%_10 = getelementptr i8, i8* %this, i32 8
 	%_11 = bitcast i8* %_10 to i32**
-	store i32* %_5, i32** %_11
+	
+	store i32* %_5, i32** %_11 ; build assignment funciton
+	;;
 	
 	%_20 = getelementptr i8, i8* %this, i32 8
 	%_21 = bitcast i8* %_20 to i32**

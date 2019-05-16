@@ -11,10 +11,13 @@ import java.util.Map.*;
 public class Symbols {
 	public Map<String, ClassMaps> classesMaps; // <class's name, object of type ClassMaps that contains all the useful maps for the class>
 	public Map<String, String> inheritances; // <class's name, inherited class's name>
+	
+	public Map<String, Integer> classesVTableSizes;
 
 	public Symbols() {
 		classesMaps = new LinkedHashMap<String, ClassMaps>(); // LinkedHashMap because we want to maintain the insertion order of elements for printing purposes
 		inheritances = new HashMap<String, String>();
+		classesVTableSizes = new HashMap<String, Integer>();
 	}
 
 	// String id: name of the variable
@@ -229,6 +232,40 @@ public class Symbols {
 		}
 
 		return null; // variable's offset not found
+	}
+
+	private int getOffsetPerType(String type) {
+		switch (type) {
+		case "boolean":
+		   return 1;
+		case "int":
+		   return 4;
+		default:
+		   return 8;
+		}
+	 }
+
+	public int getSizeOfFieldsInBytes(String className) {
+		String curClassName = className;
+		while (curClassName != null) {
+			Map<String, Integer> curVarOffsets = classesMaps.get(curClassName).varOffsets;
+			Iterator<Map.Entry<String, Integer>> entries = null;
+			Map.Entry<String, Integer> lastEntry = null;
+
+			if (curVarOffsets.size() != 0) {
+				entries = curVarOffsets.entrySet().iterator();
+				lastEntry = null;
+				// get last entry of map
+				while (entries.hasNext()) {
+					lastEntry = entries.next();
+				}
+				return curVarOffsets.get(lastEntry.getKey()) + getOffsetPerType(classesMaps.get(curClassName).varTypes.get(lastEntry.getKey()));
+			}
+
+			curClassName = inheritances.get(curClassName);
+		}
+
+		return 0; // class does not have fields
 	}
 
 	@Override

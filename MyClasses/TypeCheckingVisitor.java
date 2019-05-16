@@ -226,11 +226,14 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       if (n.f4.present()) {
          vTableMethodDeclarations = vTableMethodDeclarations.substring(0, vTableMethodDeclarations.length() - 2); // remove last two characters: ", "
       }
+      int methodsNum = n.f4.size();
 
       n.f5.accept(this, argu);
-      String curVtableDecl = "@." + id + "_vtable = global [" + n.f4.size() + " x i8*] [" + vTableMethodDeclarations
+      String curVtableDecl = "@." + id + "_vtable = global [" + methodsNum + " x i8*] [" + vTableMethodDeclarations
             + "]";
       classVtableDeclerations.put(id, curVtableDecl);
+
+      symbols.classesVTableSizes.put(id, methodsNum); // save v-table's size
 
       return curVtableDecl;
    }
@@ -297,14 +300,18 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       if (curVtableDecl.contains(parentName)) {
          curVtableDecl = curVtableDecl.replaceAll(parentName, "@" + id + ".");
       }
+      int curVTableSize = parentVTableDecleration.split("\\),").length;
 
       if (!vTableMethodDeclarations.equals("")) {
          curVtableDecl = curVtableDecl.substring(0, curVtableDecl.length() - 1); // remove last character: "]"
          curVtableDecl += (", " + vTableMethodDeclarations + "]");
+
+         curVTableSize += vTableMethodDeclarations.split("\\),").length;
+
          curVtableDecl = curVtableDecl.replaceAll("([0-9]+) x i8*",
-               (vTableMethodDeclarations.split("\\),").length + symbols.classesMaps.get(id1).methodTypes.size())
-                     + " x i8*");
+               curVTableSize/*vTableMethodDeclarations.split("\\),").length*/ + " x i8*");
       }
+      symbols.classesVTableSizes.put(id, curVTableSize); // save v-table's size
 
       n.f7.accept(this, argu);
       return curVtableDecl;
@@ -475,7 +482,8 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f0.accept(this, argu);
 
       // check if parameter's number exceeded the correct one
-      if (argu[5] != null /* if there is at a valid first inherited method */ && curMethodParamIndex >= symbols.getMethodParamsNum(argu[5], argu[3], Integer.toString(n.f0.beginLine))) {
+      if (argu[5] != null /* if there is at a valid first inherited method */ && curMethodParamIndex >= symbols
+            .getMethodParamsNum(argu[5], argu[3], Integer.toString(n.f0.beginLine))) {
          throw new TypeCheckingException("Invalid parameters number -> Line:" + n.f0.beginLine);
       }
 
