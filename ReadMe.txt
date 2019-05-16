@@ -1,7 +1,7 @@
 |Commands|
 
     For compilation -> make
-    For run -> java [MainClassName] [file1] [file2] ... [fileN]
+    For run -> java Main [file1] [file2] ... [fileN]
     For clean -> make clean
 
 |Notes|
