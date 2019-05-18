@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 // TypeCheckingVisitor does type-checking and creates and returns the IR v-table declarations
 public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
@@ -218,9 +220,12 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f0.accept(this, argu);
       String id = n.f1.accept(this, argu);
       n.f2.accept(this, argu);
+
       curOffset = 0;
       n.f3.accept(this, new String[] { id });
+
       curOffset = 0;
+      symbols.classesVTableMethodTypes.put(id, new ArrayList<String>());
       vTableMethodDeclarations = "";
       n.f4.accept(this, new String[] { id });
       if (n.f4.present()) {
@@ -286,6 +291,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          curOffset = 0;
       }
 
+      symbols.classesVTableMethodTypes.put(id, new ArrayList<String>());
       vTableMethodDeclarations = ""; // declarations of methods that only exist in the current (child) class and NOT in the parent class
       n.f6.accept(this, new String[] { id });
       if (!vTableMethodDeclarations.equals("")) {
@@ -413,12 +419,15 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          curOffset += getOffsetPerType("method");
       }
 
-      if (foundInheritedClassMethodType == null) {
-         vTableMethodDeclarations += "i8* bitcast (" + getIRType(retType) + " (" + vTableCurMethodParamTypes + ")* @"
-               + argu[0] + "." + id + " to i8*), "; // add entry to v-table string
-         System.out.println("hi :" + vTableMethodDeclarations);
-      }
+      String IRMethodType = getIRType(retType) + " (" + vTableCurMethodParamTypes + ")*";
 
+      if (foundInheritedClassMethodType == null) {
+         vTableMethodDeclarations += "i8* bitcast (" + IRMethodType + " @" + argu[0] + "." + id + " to i8*), "; // add entry to v-table string
+         // System.out.println("hi :" + vTableMethodDeclarations);
+      }
+      // add method's type to list for use in IR code generation
+      symbols.classesVTableMethodTypes.get(argu[0]).add(IRMethodType);
+      // System.out.println(IRMethodType);
       return _ret;
    }
 

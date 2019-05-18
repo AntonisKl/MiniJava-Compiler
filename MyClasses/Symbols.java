@@ -11,13 +11,15 @@ import java.util.Map.*;
 public class Symbols {
 	public Map<String, ClassMaps> classesMaps; // <class's name, object of type ClassMaps that contains all the useful maps for the class>
 	public Map<String, String> inheritances; // <class's name, inherited class's name>
-	
+
 	public Map<String, Integer> classesVTableSizes;
+	public Map<String, List<String>> classesVTableMethodTypes; // i32 (i8*,i32)*
 
 	public Symbols() {
 		classesMaps = new LinkedHashMap<String, ClassMaps>(); // LinkedHashMap because we want to maintain the insertion order of elements for printing purposes
 		inheritances = new HashMap<String, String>();
 		classesVTableSizes = new HashMap<String, Integer>();
+		classesVTableMethodTypes = new HashMap<String, List<String>>();
 	}
 
 	// String id: name of the variable
@@ -136,6 +138,25 @@ public class Symbols {
 		return classScopeMethodParamTypes.size();
 	}
 
+	public String getMethodParamType(String className, String methodName, int index) {
+		Map<String, List<String>> curClassMethodParamTypes = classesMaps.get(className).methodParamTypes;
+		List<String> classScopeMethodParamTypes = curClassMethodParamTypes.get(methodName);
+
+		if (classScopeMethodParamTypes == null) {
+			// search into the inherited classes' scopes
+			String curClassName = className;
+			while (inheritances.get(curClassName) != null) {
+				curClassName = inheritances.get(curClassName);
+
+				if (classesMaps.get(curClassName).methodParamTypes.get(methodName) != null)
+					// method found
+					return classesMaps.get(curClassName).methodParamTypes.get(methodName).get(index);
+			}
+		}
+
+		return classScopeMethodParamTypes.get(index);
+	}
+
 	// returns method type just by accessing the maps
 	public String getMethodType(String className, String methodName) {
 		return classesMaps.get(className).methodTypes.get(methodName);
@@ -231,19 +252,19 @@ public class Symbols {
 			curClassName = inheritances.get(curClassName);
 		}
 
-		return null; // variable's offset not found
+		return null; // method's offset not found
 	}
 
 	private int getOffsetPerType(String type) {
 		switch (type) {
 		case "boolean":
-		   return 1;
+			return 1;
 		case "int":
-		   return 4;
+			return 4;
 		default:
-		   return 8;
+			return 8;
 		}
-	 }
+	}
 
 	public int getSizeOfFieldsInBytes(String className) {
 		String curClassName = className;
@@ -259,7 +280,8 @@ public class Symbols {
 				while (entries.hasNext()) {
 					lastEntry = entries.next();
 				}
-				return curVarOffsets.get(lastEntry.getKey()) + getOffsetPerType(classesMaps.get(curClassName).varTypes.get(lastEntry.getKey()));
+				return curVarOffsets.get(lastEntry.getKey())
+						+ getOffsetPerType(classesMaps.get(curClassName).varTypes.get(lastEntry.getKey()));
 			}
 
 			curClassName = inheritances.get(curClassName);

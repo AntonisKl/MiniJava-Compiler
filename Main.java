@@ -86,7 +86,7 @@ class Main {
 
 				outStream.write(IRCode.getBytes());
 
-				System.out.println(IRCode);
+				// System.out.println(IRCode);
 
 
 			} catch (ParseException ex) {

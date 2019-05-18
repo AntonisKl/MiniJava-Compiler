@@ -33,6 +33,7 @@ define i32 @main() {
 	%_6 = load i8*, i8** %_5
 	%_7 = bitcast i8* %_6 to i32 (i8*,i32)*
 	%_8 = call i32 %_7(i8* %_0, i32 10)
+	
 	call void (i32) @print_int(i32 %_8)
 	
 	ret i32 0
@@ -51,6 +52,7 @@ define i32 @BBS.Start(i8* %this, i32 %.sz) {
 	%_4 = bitcast i8* %_3 to i32 (i8*,i32)*
 	%_6 = load i32, i32* %sz
 	%_5 = call i32 %_4(i8* %this, i32 %_6)
+
 	store i32 %_5, i32* %aux01
 	
 	; BBS.Print : 2

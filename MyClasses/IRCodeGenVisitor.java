@@ -7,13 +7,18 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     // these are used as defines
     final static String METHOD = "method";
     final static String CLASS = "class";
+    // final static String MESSAGE_SEND = "message_send";
 
     final static String BOOLEAN = "boolean";
     final static String INT = "int";
     final static String INT_ARRAY = "int[]";
 
-    int curLocalVarIndex, curArrayAllocLabelIndex = 0, curAndClauseLabelIndex = 0, curOobLabelindex = 0;
-    String curMethodParams, curMethodVarDeclarations, methodDeclarations, curMethodStatements;
+    int curLocalVarIndex, curArrayAllocLabelIndex = 0, curAndClauseLabelIndex = 0, curOobLabelindex = 0,
+            curMethodCallArgIndex, curTabsNum;
+    String curMethodParams, curMethodVarDeclarations, methodDeclarations, curMethodStatements, curMethodCallArgs,
+            lastObjectType;
+
+    boolean storeExpType;
     // boolean curExpIsRightOfAndExp = false;
 
     Symbols symbols;
@@ -43,6 +48,10 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
     String buildMethodParam(String id, String type) {
         return ", " + getIRType(type) + " %." + id;
+    }
+
+    String buildMethodCallArg(String varName, String type) {
+        return ", " + getIRType(type) + " " + varName;
     }
 
     String buildLocalVarFromParam(String id, String type) {
@@ -114,8 +123,20 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         return buildStatement("store " + type + " " + fromVar + ", " + type + "* " + toVar);
     }
 
+    String buildCall(String resultVar, String methodNameVar, String retType, String methodArgs) {
+        // %_5 = call i32 %_4(i8* %this, i32 %_6)
+        if (resultVar != null)
+            return buildStatement(resultVar + " = call " + retType + " " + methodNameVar + "(" + methodArgs + ")");
+        else
+            return buildStatement("call " + retType + " " + methodNameVar + "(" + methodArgs + ")");
+    }
+
     String buildStatement(String statement) {
-        return statement + "\n";
+        String retValue = "";
+        for (int i = 0; i < curTabsNum; i++)
+            retValue += "\t";
+        retValue += (statement + "\n");
+        return retValue;
     }
 
     int getVTableOffset(int offset) {
@@ -148,7 +169,8 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
                 String IRType = getIRType(foundMethodVarType); //symbols.getVarType(id, className, methodName, null, true)
                 // %_0 = load i32, i32* %sz
                 IRVarName = getNextLocalVarName();
-                curMethodStatements += ("\t" + IRVarName + " = load " + IRType + ", " + IRType + "* %" + id + "\n");
+                // curMethodStatements += ("\t" + IRVarName + " = load " + IRType + ", " + IRType + "* %" + id + "\n");
+                curMethodStatements += buildLoad(IRVarName, "%" + id, IRType);
                 // curLocalVarIndex++;
             }
         } else { // variable belongs to the class scope
@@ -159,8 +181,9 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
             curMethodStatements += ("\t" + getNextLocalVarName() + " = getelementptr i8, i8* %this, " + IRType + " "
                     + getVTableOffset(symbols.getVarOffset(id, className)) + "\n");
             IRVarName = getNextLocalVarName();
-            curMethodStatements += ("\t" + IRVarName + " = bitcast i8* %_" + (curLocalVarIndex - 2) + " to " + IRType
-                    + "*\n");
+            // curMethodStatements += ("\t" + IRVarName + " = bitcast i8* %_" + (curLocalVarIndex - 2) + " to " + IRType
+            //         + "*\n");
+            curMethodStatements += buildBitcast(IRVarName, "%_" + (curLocalVarIndex - 2), "i8*", IRType + "*");
         }
 
         return IRVarName;
@@ -206,6 +229,9 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
         String labelName1 = getNextArrayAllocLabelName(), labelName2 = getNextArrayAllocLabelName();
         String[] varNames = new String[5];
+        for (int i = 0; i < 5; i++) {
+            varNames[i] = getNextLocalVarName();
+        }
 
         // curMethodStatements += (varNames[0] + " = load i32, i32* " + expResult + "\n");
         // curMethodStatements += (varNames[1] + " = icmp slt i32 " + varNames[0] + ", 0\n");
@@ -329,6 +355,37 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         return varNames[4];
     }
 
+    String buildMessageSend(String objectVar, String methodName, String methodArgs) {
+        // %_0 = bitcast i8* %this to i8***
+        // %_1 = load i8**, i8*** %_0
+        // %_2 = getelementptr i8*, i8** %_1, i32 3
+        // %_3 = load i8*, i8** %_2
+        // %_4 = bitcast i8* %_3 to i32 (i8*,i32)*
+        // %_6 = load i32, i32* %sz ; has already happened by previous visit function ??????????????????????????????
+        // %_5 = call i32 %_4(i8* %this, i32 %_6)
+
+        String[] varNames = new String[6];
+        for (int i = 0; i < 6; i++) {
+            varNames[i] = getNextLocalVarName();
+        }
+        // System.out.println("last object type: " + lastObjectType);
+
+        int vTableMethodIndex = symbols.getMethodOffset(methodName, lastObjectType) / 8;
+        // System.out.println("                                                index: " + vTableMethodIndex);
+
+        curMethodStatements += buildBitcast(varNames[0], objectVar, "i8*", "i8***");
+        curMethodStatements += buildLoad(varNames[1], varNames[0], "i8**");
+        curMethodStatements += buildGetElementPtr(varNames[2], varNames[1], vTableMethodIndex + "", "i8*");
+        curMethodStatements += buildLoad(varNames[3], varNames[2], "i8*");
+        curMethodStatements += buildBitcast(varNames[4], varNames[3], "i8*",
+                symbols.classesVTableMethodTypes.get(lastObjectType).get(vTableMethodIndex));
+        // curMethodStatements += buildLoad(varNames[5], varToBeLoaded, IRType)
+        curMethodStatements += buildCall(varNames[5], varNames[4],
+                getIRType(symbols.getMethodType(methodName, lastObjectType, null, false)), methodArgs);
+
+        return varNames[5];
+    }
+
     // String buildAndExpression(String expResult1, String expResult2) {
     //     // %_10 = xor i1 1, %_11 ; %_10 = expResult1
 
@@ -445,7 +502,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f16 -> "}"
      * f17 -> "}"
      */
-    public String visit(MainClass n, String[] argu) throws TypeCheckingException {
+    public String visit(MainClass n, String[] argu) {
         String _ret = null;
 
         n.f0.accept(this, argu);
@@ -496,7 +553,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f4 -> ( MethodDeclaration() )*
      * f5 -> "}"
      */
-    public String visit(ClassDeclaration n, String[] argu) throws TypeCheckingException {
+    public String visit(ClassDeclaration n, String[] argu) {
         String _ret = null;
         n.f0.accept(this, argu);
         String id = n.f1.accept(this, argu);
@@ -518,7 +575,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f6 -> ( MethodDeclaration() )*
      * f7 -> "}"
      */
-    public String visit(ClassExtendsDeclaration n, String[] argu) throws TypeCheckingException {
+    public String visit(ClassExtendsDeclaration n, String[] argu) {
         String _ret = null;
         n.f0.accept(this, argu);
         String id1 = n.f1.accept(this, argu);
@@ -538,7 +595,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> ";"
      */
     // argu[0]: "class", argu[1]: name of class OR argu[0]: "method", argu[1]: name of method argu[2]: "class", argu[3]: name of class
-    public String visit(VarDeclaration n, String[] argu) throws TypeCheckingException {
+    public String visit(VarDeclaration n, String[] argu) {
         String _ret = null;
         String type = n.f0.accept(this, argu);
         String id = n.f1.accept(this, argu);
@@ -571,17 +628,19 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      */
 
     // argu[0]: class name
-    public String visit(MethodDeclaration n, String[] argu) throws TypeCheckingException {
+    public String visit(MethodDeclaration n, String[] argu) {
         String _ret = null;
 
         methodDeclarations += "define ";
         curLocalVarIndex = 0; // reset local variable index
+        curTabsNum = 1;
 
         n.f0.accept(this, argu);
         String type = n.f1.accept(this, argu);
         String id = n.f2.accept(this, argu);
 
-        methodDeclarations += (symbols.getMethodType(argu[0], id) + " @" + argu[0] + "." + id + "(i8* %this");
+        methodDeclarations += (getIRType(symbols.getMethodType(argu[0], id)) + " @" + argu[0] + "." + id
+                + "(i8* %this");
 
         n.f3.accept(this, argu);
 
@@ -728,7 +787,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f3 -> ";"
      */
     // argu[0]: "method", argu[1]: name of method, argu[2]: "class", argu[3]: name of class
-    public String visit(AssignmentStatement n, String[] argu) throws TypeCheckingException {
+    public String visit(AssignmentStatement n, String[] argu) {
         String _ret = null;
 
         String id = n.f0.accept(this, argu);
@@ -761,7 +820,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f6 -> ";"
      */
     // argu[0]: "method", argu[1]: name of method, argu[2]: "class", argu[3]: name of class
-    public String visit(ArrayAssignmentStatement n, String[] argu) throws TypeCheckingException {
+    public String visit(ArrayAssignmentStatement n, String[] argu) {
         // TODO: add check for out of bounds
 
         String _ret = null;
@@ -787,7 +846,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f6 -> Statement()
      */
     // argu[0]: "method", argu[1]: name of method, argu[2]: "class", argu[3]: name of class
-    public String visit(IfStatement n, String[] argu) throws TypeCheckingException {
+    public String visit(IfStatement n, String[] argu) {
         String _ret = null;
         n.f0.accept(this, argu);
         n.f1.accept(this, argu);
@@ -807,7 +866,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f4 -> Statement()
      */
     // argu[0]: "method", argu[1]: name of method, argu[2]: "class", argu[3]: name of class
-    public String visit(WhileStatement n, String[] argu) throws TypeCheckingException {
+    public String visit(WhileStatement n, String[] argu) {
         String _ret = null;
         n.f0.accept(this, argu);
         n.f1.accept(this, argu);
@@ -825,13 +884,18 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f4 -> ";"
      */
     // argu[0]: "method", argu[1]: name of method, argu[2]: "class", argu[3]: name of class
-    public String visit(PrintStatement n, String[] argu) throws TypeCheckingException {
+    public String visit(PrintStatement n, String[] argu) {
         String _ret = null;
         n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String expResult = n.f2.accept(this, argu);
         n.f3.accept(this, argu);
         n.f4.accept(this, argu);
+
+        // call void (i32) @print_int(i32 %_8)
+
+        curMethodStatements += buildCall(null, "@print_int", "void (i32)", "i32 " + expResult);
+
         return _ret;
     }
 
@@ -855,7 +919,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f1 -> "&&"
      * f2 -> Clause()
      */
-    public String visit(AndExpression n, String[] argu) throws TypeCheckingException {
+    public String visit(AndExpression n, String[] argu) {
         // %_10 = xor i1 1, %_11 ; %_10 = expResult1
 
         // ; start of and clause
@@ -911,7 +975,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f1 -> "<"
      * f2 -> PrimaryExpression()
      */
-    public String visit(CompareExpression n, String[] argu) throws TypeCheckingException {
+    public String visit(CompareExpression n, String[] argu) {
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String expResult2 = n.f2.accept(this, argu);
@@ -924,7 +988,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f1 -> "+"
      * f2 -> PrimaryExpression()
      */
-    public String visit(PlusExpression n, String[] argu) throws TypeCheckingException {
+    public String visit(PlusExpression n, String[] argu) {
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String expResult2 = n.f2.accept(this, argu);
@@ -938,7 +1002,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f1 -> "-"
      * f2 -> PrimaryExpression()
      */
-    public String visit(MinusExpression n, String[] argu) throws TypeCheckingException {
+    public String visit(MinusExpression n, String[] argu) {
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String expResult2 = n.f2.accept(this, argu);
@@ -951,7 +1015,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f1 -> "*"
      * f2 -> PrimaryExpression()
      */
-    public String visit(TimesExpression n, String[] argu) throws TypeCheckingException {
+    public String visit(TimesExpression n, String[] argu) {
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String expResult2 = n.f2.accept(this, argu);
@@ -965,16 +1029,14 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> PrimaryExpression()
      * f3 -> "]"
      */
-    public String visit(ArrayLookup n, String[] argu) throws TypeCheckingException {
+    public String visit(ArrayLookup n, String[] argu) {
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
 
         String expResult2 = n.f2.accept(this, argu);
         n.f3.accept(this, argu);
 
-        buildArrayLookupExpression(expResult1, expResult2);
-
-        return INT;
+        return buildArrayLookupExpression(expResult1, expResult2);
     }
 
     /**
@@ -982,7 +1044,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f1 -> "."
      * f2 -> "length"
      */
-    public String visit(ArrayLength n, String[] argu) throws TypeCheckingException {
+    public String visit(ArrayLength n, String[] argu) {
         String expResult = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         n.f2.accept(this, argu);
@@ -999,10 +1061,22 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f5 -> ")"
      */
     // argu[0]: METHOD, argu[1]: context method's name, argu[2]: CLASS, argu[3]: context class's name
-    // argu[4]: METHOD, argu[5]: called method's name, argu[6]: CLASS, argu[7]: called method's class name
-    public String visit(MessageSend n, String[] argu) throws TypeCheckingException {
-        String _ret = null;
-        String type = n.f0.accept(this, argu);
+    public String visit(MessageSend n, String[] argu) {
+
+        storeExpType = true;
+        String expResult = n.f0.accept(this,
+                argu /*new String[] { MESSAGE_SEND, argu[0], argu[1], argu[2], argu[3] }*/);
+        storeExpType = false;
+        // String objectVar = null, objectType = null;
+        // if (expResult.equals("%this")) {
+        //     objectVar = expResult;
+        //     objectType = argu[3];
+        // } else {
+        //     System.out.println(expResult);
+        //     String[] objectVarAndType = expResult.split("~");
+        //     objectVar = objectVarAndType[0];
+        //     objectType = objectVarAndType[1];
+        // }
 
         n.f1.accept(this, argu);
 
@@ -1013,9 +1087,10 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         // String methodType = symbols.getMethodType(methodName, type, null, true);
 
         n.f3.accept(this, argu);
-        if (n.f4.present()) {
-            n.f4.accept(this, new String[] { METHOD, argu[1], CLASS, argu[3], METHOD, methodName, CLASS, type });
-        }
+
+        curMethodCallArgs = "i8* %this";
+        curMethodCallArgIndex = 0;
+        n.f4.accept(this, new String[] { METHOD, argu[1], CLASS, argu[3], METHOD, methodName, CLASS, lastObjectType });
 
         n.f5.accept(this, argu);
 
@@ -1023,7 +1098,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         //     return methodType;
 
         // return methodType;
-        return null;
+        return buildMessageSend(expResult, methodName, curMethodCallArgs);
     }
 
     /**
@@ -1033,10 +1108,14 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
     // argu[0]: METHOD, argu[1]: context method's name, argu[2]: CLASS, argu[3]: context class's name
     // argu[4]: METHOD, argu[5]: called method's name, argu[6]: CLASS, argu[7]: called method's class name
-    public String visit(ExpressionList n, String[] argu) throws TypeCheckingException {
+    public String visit(ExpressionList n, String[] argu) {
         String _ret = null;
         String expResult = n.f0.accept(this, argu);
 
+        curMethodCallArgs += buildMethodCallArg(expResult,
+                symbols.getMethodParamType(argu[7], argu[5], curMethodCallArgIndex));
+
+        curMethodCallArgIndex++;
         n.f1.accept(this, argu);
         return _ret;
     }
@@ -1056,10 +1135,15 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      */
     // argu[0]: METHOD, argu[1]: context method's name, argu[2]: CLASS, argu[3]: context class's name
     // argu[4]: METHOD, argu[5]: called method's name, argu[6]: CLASS, argu[7]: called method's class name
-    public String visit(ExpressionTerm n, String[] argu) throws TypeCheckingException {
+    public String visit(ExpressionTerm n, String[] argu) {
         String _ret = null;
         n.f0.accept(this, argu);
         String expResult = n.f1.accept(this, argu);
+
+        curMethodCallArgs += buildMethodCallArg(expResult,
+                symbols.getMethodParamType(argu[7], argu[5], curMethodCallArgIndex));
+
+        curMethodCallArgIndex++;
 
         return _ret;
     }
@@ -1083,15 +1167,28 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     *       | BracketExpression()
     */
     // argu[0]: METHOD, argu[1]: context method's name, argu[2]: CLASS, argu[3]: context class's name
-    // argu[4]: METHOD, argu[5]: called method's name, argu[6]: CLASS, argu[7]: called method's class name
     // returns the proper expression's type according to the choice between the above symbols
-    public String visit(PrimaryExpression n, String[] argu) throws TypeCheckingException {
+    public String visit(PrimaryExpression n, String[] argu) {
         String choice = n.f0.accept(this, argu);
         int choiceId = n.f0.which;
 
         switch (choiceId) {
         case 3: // identifier
+            if (storeExpType) {
+                lastObjectType = symbols.getVarType(choice, argu[3], argu[1], null, true);
+            }
+            // if (argu[0].equals(METHOD))
             return createIRVarName(choice, argu[3], argu[1], false);
+
+        //     return createIRVarName(choice, argu[4], argu[2], false) + "~"
+        //             + symbols.getVarType(choice, argu[4], argu[2], null, true); // return the type of the variable as well
+
+        case 4:
+            if (storeExpType) {
+                lastObjectType = argu[3];
+            }
+            return choice;
+
         // 7: choice is the result of the expression that is inside brackets
         default:
             return choice;
@@ -1144,7 +1241,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f3 -> Expression()
      * f4 -> "]"
      */
-    public String visit(ArrayAllocationExpression n, String[] argu) throws TypeCheckingException {
+    public String visit(ArrayAllocationExpression n, String[] argu) {
         n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         n.f2.accept(this, argu);
@@ -1160,12 +1257,18 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> "("
      * f3 -> ")"
      */
-    public String visit(AllocationExpression n, String[] argu) throws TypeCheckingException {
+    public String visit(AllocationExpression n, String[] argu) {
         n.f0.accept(this, argu);
         String id = n.f1.accept(this, argu);
         n.f2.accept(this, argu);
         n.f3.accept(this, argu);
 
+        if (storeExpType) {
+            lastObjectType = id;
+        }
+        // if (argu[0].equals(MESSAGE_SEND))
+        //     return createNewObject(id) + "~" + id;
+        // else
         return createNewObject(id);
     }
 
@@ -1188,6 +1291,6 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         n.f0.accept(this, argu);
         String expResult = n.f1.accept(this, argu);
         n.f2.accept(this, argu);
-        return expResult; // return expression's type
+        return expResult; // return expression's result
     }
 }
