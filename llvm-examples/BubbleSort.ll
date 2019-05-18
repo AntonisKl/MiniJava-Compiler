@@ -391,9 +391,12 @@ arr_alloc8:
 	;;
 	
 	%_20 = getelementptr i8, i8* %this, i32 8
-	%_21 = bitcast i8* %_20 to i32**
+
+	%_21 = bitcast i8* %_20 to i32** ; already done till here
+
 	%_22 = load i32*, i32** %_21
 	%_12 = load i32, i32 *%_22
+
 	%_13 = icmp ult i32 0, %_12
 	br i1 %_13, label %oob17, label %oob18
 

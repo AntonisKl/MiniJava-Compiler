@@ -12,7 +12,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     final static String INT = "int";
     final static String INT_ARRAY = "int[]";
 
-    int curLocalVarIndex, curArrayAllocLabelIndex = 0, curAndClauseLabelIndex = 0;
+    int curLocalVarIndex, curArrayAllocLabelIndex = 0, curAndClauseLabelIndex = 0, curOobLabelindex = 0;
     String curMethodParams, curMethodVarDeclarations, methodDeclarations, curMethodStatements;
     // boolean curExpIsRightOfAndExp = false;
 
@@ -51,6 +51,53 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
                 + "\n\n";
     }
 
+    String buildLoad(String resultVar, String varToBeLoaded, String IRType) {
+        return buildStatement(resultVar + " = load " + IRType + ", " + IRType + "* " + varToBeLoaded);
+    }
+
+    String buildBitcast(String resultVar, String varToBeBitcasted, String fromType, String toType) {
+        // %_32 = bitcast i8* %_31 to i32**
+        return buildStatement(resultVar + " = bitcast " + fromType + " " + varToBeBitcasted + " to " + IRType);
+    }
+
+    String buildGetElementPtr(String resultVar, String arrayVar, String offsetVar, String type) {
+        // 	%_31 = getelementptr i8, i8* %this, i32 8
+        return buildStatement(
+                resultVar + " = getelementptr " + type + ", " + type + "* " + arrayVar + ", i32 " + offsetVar);
+    }
+
+    String buildIcmp(String resultVar, String varName1, String varName2, String operation, String type) {
+        //     %_13 = icmp ult i32 0, %_12
+        return buildStatement(resultVar + " = icmp " + op + " " + type + " " + varName1 + ", " + varName2);
+    }
+
+    String buildBranch(String condVar, String label1, String label2) {
+        // br i1 %_13, label %oob17, label %oob18
+        return buildStatement("br i1 " + condVar + ", label " + label1 + ", label " + label2);
+    }
+
+    String buildBranch(String label) {
+        // br label %oob17
+        return buildStatement("br label " + label);
+    }
+
+    String buildLabel(String label) {
+        return label + ":\n";
+    }
+
+    String buildAdd(String resultVar, String var1, String var2) {
+        //     %_14 = add i32 0, 1
+        return buildStatement(resultVar + " = add i32 " + var1 + ", " + var2);
+    }
+
+    String buildThrowOob() {
+        return buildStatement("call void @throw_oob()");
+    }
+
+    String buildStatement(String statement) {
+        return statement + "\n";
+    }
+
     int getVTableOffset(int offset) {
         return offset + 8;
     }
@@ -65,6 +112,10 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
     String getNextAndClauseLabelName() {
         return "and_clause" + (curAndClauseLabelIndex++);
+    }
+
+    String getNextOobLabeName() {
+        return "oob" + (curOobLabelindex++);
     }
 
     String createIRVarName(String id, String className, String methodName, boolean isLeftValue) {
@@ -89,7 +140,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
                     + getVTableOffset(symbols.getVarOffset(id, className)) + "\n");
             IRVarName = getNextLocalVarName();
             curMethodStatements += ("\t" + IRVarName + " = bitcast i8* %_" + (curLocalVarIndex - 2) + " to " + IRType
-                    + "\n");
+                    + "*\n");
         }
 
         return IRVarName;
@@ -190,6 +241,49 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         curMethodStatements += (varName2 + " = load i32, i32* " + varName1 + "\n");
 
         return varName2;
+    }
+
+    String buildArrayLookupExpression(String expResultArrName, String expResultIndex) {
+        //     %_22 = load i32*, i32** %_21
+        //     %_12 = load i32, i32 *%_22
+
+        //     %_13 = icmp ult i32 0, %_12
+        //     br i1 %_13, label %oob17, label %oob18
+
+        // oob17:
+        //     %_14 = add i32 0, 1
+        //     %_15 = getelementptr i32, i32* %_22, i32 %_14
+
+        //     br label %oob19
+
+        // oob18:
+        //     call void @throw_oob()
+        //     br label %oob19
+
+        // oob19:
+        //     store i32 20, i32* %_15 ; assignment function (will be called after this java function)
+
+        String[] varNames = new String[5], labelNames = new String[3];
+        for (int i = 0; i < 5; i++) {
+            if (i < 3) {
+                labelNames[i] = getNextOobLabeName();
+            }
+            varNames[i] = getNextLocalVarName();
+        }
+
+        curMethodStatements += buildLoad(varNames[0], expResultArrName, "i32*");
+        curMethodStatements += buildLoad(varNames[1], varNames[0], "i32");
+        curMethodStatements += buildIcmp(varNames[2], "0", varNames[1], "ult", "i32");
+        curMethodStatements += buildBranch(varNames[2], labelNames[0], labelNames[1]);
+        curMethodStatements += buildLabel(labelNames[0]);
+        curMethodStatements += buildAdd(varNames[3], expResultIndex, "1");
+        curMethodStatements += buildGetElementPtr(varNames[4], varNames[0], varNames[3], "i32");
+        curMethodStatements += buildBranch(labelNames[2]);
+        curMethodStatements += buildLabel(labelNames[1]);
+        curMethodStatements += buildThrowOob();
+        curMethodStatements += buildBranch(labelNames[2]);
+
+        return varNames[4];
     }
 
     // String buildAndExpression(String expResult1, String expResult2) {
@@ -756,6 +850,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         n.f1.accept(this, argu);
 
         // curExpIsRightOfAndExp = true;
+
         String clauseResult2 = n.f2.accept(this, argu);
 
         curMethodStatements += ("\tbr label " + labelNames[2] + "\n");
@@ -828,13 +923,13 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f3 -> "]"
      */
     public String visit(ArrayLookup n, String[] argu) throws TypeCheckingException {
-        String type1 = n.f0.accept(this, argu);
+        String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
 
-        String type2 = n.f2.accept(this, argu);
+        String expResult2 = n.f2.accept(this, argu);
         n.f3.accept(this, argu);
 
-        // TODO: add check for array index out of bounds
+        buildArrayLookupExpression(expResult1, expResult2);
 
         return INT;
     }
