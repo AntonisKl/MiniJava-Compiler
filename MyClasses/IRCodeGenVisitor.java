@@ -57,7 +57,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
     String buildBitcast(String resultVar, String varToBeBitcasted, String fromType, String toType) {
         // %_32 = bitcast i8* %_31 to i32**
-        return buildStatement(resultVar + " = bitcast " + fromType + " " + varToBeBitcasted + " to " + IRType);
+        return buildStatement(resultVar + " = bitcast " + fromType + " " + varToBeBitcasted + " to " + toType);
     }
 
     String buildGetElementPtr(String resultVar, String arrayVar, String offsetVar, String type) {
@@ -68,7 +68,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
     String buildIcmp(String resultVar, String varName1, String varName2, String operation, String type) {
         //     %_13 = icmp ult i32 0, %_12
-        return buildStatement(resultVar + " = icmp " + op + " " + type + " " + varName1 + ", " + varName2);
+        return buildStatement(resultVar + " = icmp " + operation + " " + type + " " + varName1 + ", " + varName2);
     }
 
     String buildBranch(String condVar, String label1, String label2) {
@@ -90,8 +90,28 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         return buildStatement(resultVar + " = add i32 " + var1 + ", " + var2);
     }
 
+    String buildSub(String resultVar, String var1, String var2) {
+        //     %_14 = add i32 0, 1
+        return buildStatement(resultVar + " = sub i32 " + var1 + ", " + var2);
+    }
+
+    String buildMul(String resultVar, String var1, String var2) {
+        //     %_14 = add i32 0, 1
+        return buildStatement(resultVar + " = mul i32 " + var1 + ", " + var2);
+    }
+
     String buildThrowOob() {
         return buildStatement("call void @throw_oob()");
+    }
+
+    String buildCalloc(String resultVar, String arg1, String arg2) {
+        //     %_4 = call i8* @calloc(i32 4, i32 %_3)
+        return buildStatement(resultVar + " = call i8* @calloc(i32 " + arg1 + ", i32 " + arg2);
+    }
+
+    String buildStore(String fromVar, String toVar, String type) {
+        //     store i32 %_9, i32* %_5
+        return buildStatement("store " + type + " " + fromVar + ", " + type + "* " + toVar);
     }
 
     String buildStatement(String statement) {
@@ -187,18 +207,31 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         String labelName1 = getNextArrayAllocLabelName(), labelName2 = getNextArrayAllocLabelName();
         String[] varNames = new String[5];
 
-        curMethodStatements += (varNames[0] + " = load i32, i32* " + expResult + "\n");
-        curMethodStatements += (varNames[1] + " = icmp slt i32 " + varNames[0] + ", 0\n");
-        curMethodStatements += ("br i1 " + varNames[1] + ", label %" + labelName1 + ", label %" + labelName2 + "\n\n");
-        curMethodStatements += (labelName1 + ":\n");
-        curMethodStatements += "\tcall void @throw_oob()\n";
-        curMethodStatements += ("\tbr label " + labelName2 + "\n\n");
+        // curMethodStatements += (varNames[0] + " = load i32, i32* " + expResult + "\n");
+        // curMethodStatements += (varNames[1] + " = icmp slt i32 " + varNames[0] + ", 0\n");
+        // curMethodStatements += ("br i1 " + varNames[1] + ", label %" + labelName1 + ", label %" + labelName2 + "\n\n");
+        // curMethodStatements += (labelName1 + ":\n");
+        // curMethodStatements += "\tcall void @throw_oob()\n";
+        // curMethodStatements += ("\tbr label " + labelName2 + "\n\n");
 
-        curMethodStatements += (labelName2 + ":\n");
-        curMethodStatements += ("\t" + varNames[2] + " = add i32 " + varNames[0] + ", 1\n");
-        curMethodStatements += ("\t" + varNames[3] + " = call i8* @calloc(i32 4, i32 " + varNames[2] + "\n");
-        curMethodStatements += ("\t" + varNames[4] + " = bitcast i8* " + varNames[3] + " to i32*");
-        curMethodStatements += ("\tstore i32 " + varNames[0] + ", i32* " + varNames[4] + "\n");
+        // curMethodStatements += (labelName2 + ":\n");
+        // curMethodStatements += ("\t" + varNames[2] + " = add i32 " + varNames[0] + ", 1\n");
+        // curMethodStatements += ("\t" + varNames[3] + " = call i8* @calloc(i32 4, i32 " + varNames[2] + "\n");
+        // curMethodStatements += ("\t" + varNames[4] + " = bitcast i8* " + varNames[3] + " to i32*");
+        // curMethodStatements += ("\tstore i32 " + varNames[0] + ", i32* " + varNames[4] + "\n");
+
+        curMethodStatements += buildLoad(varNames[0], expResult, "i32");
+        curMethodStatements += buildIcmp(varNames[1], varNames[0], "0", "slt", "i32");
+        curMethodStatements += buildBranch(varNames[1], labelName1, labelName2);
+        curMethodStatements += buildLabel(labelName1);
+        curMethodStatements += buildThrowOob();
+        curMethodStatements += buildBranch(labelName2);
+
+        curMethodStatements += buildLabel(labelName2);
+        curMethodStatements += buildAdd(varNames[2], varNames[0], "1");
+        curMethodStatements += buildCalloc(varNames[3], "4", varNames[2]);
+        curMethodStatements += buildBitcast(varNames[4], varNames[3], "i8*", "i32*");
+        curMethodStatements += buildStore(varNames[0], varNames[4], "i32");
 
         return varNames[4]; // IR variable that has contains the array
     }
@@ -208,17 +241,24 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         switch (symbol) {
         case "+":
             // %_1 = add i32 %_0, 1
-            curMethodStatements += (IRVarName + " = add i32 " + expResult1 + ", " + expResult2 + "\n");
+            // curMethodStatements += (IRVarName + " = add i32 " + expResult1 + ", " + expResult2 + "\n");
+            curMethodStatements += buildAdd(IRVarName, expResult1, expResult2);
+
             break;
         case "-":
-            curMethodStatements += (IRVarName + " = sub i32 " + expResult1 + ", " + expResult2 + "\n");
+            // curMethodStatements += (IRVarName + " = sub i32 " + expResult1 + ", " + expResult2 + "\n");
+            curMethodStatements += buildSub(IRVarName, expResult1, expResult2);
             break;
         case "*":
-            curMethodStatements += (IRVarName + " = mul i32 " + expResult1 + ", " + expResult2 + "\n");
+            // curMethodStatements += (IRVarName + " = mul i32 " + expResult1 + ", " + expResult2 + "\n");
+            curMethodStatements += buildMul(IRVarName, expResult1, expResult2);
+
             break;
         case "<":
             // %_7 = icmp slt i32 %_5, %_6
-            curMethodStatements += (IRVarName + " = icmp slt i32 " + expResult1 + ", " + expResult2 + "\n");
+            // curMethodStatements += (IRVarName + " = icmp slt i32 " + expResult1 + ", " + expResult2 + "\n");
+
+            curMethodStatements += buildIcmp(IRVarName, expResult1, expResult2, "slt", "i32");
             break;
         }
 
@@ -237,8 +277,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         // %_1 = load i32, i32* %_0
 
         String varName1 = getNextLocalVarName(), varName2 = getNextLocalVarName();
-        curMethodStatements += (varName1 + " = getelementptr i32, i32* " + expResult + ", i32 0\n");
-        curMethodStatements += (varName2 + " = load i32, i32* " + varName1 + "\n");
+        // curMethodStatements += (varName1 + " = getelementptr i32, i32* " + expResult + ", i32 0\n");
+        // curMethodStatements += (varName2 + " = load i32, i32* " + varName1 + "\n");
+
+        curMethodStatements += buildGetElementPtr(varName1, expResult, "0", "i32");
+        curMethodStatements += buildLoad(varName2, varName1, "i32");
 
         return varName2;
     }
