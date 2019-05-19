@@ -30,3 +30,4 @@ ParseException.java
 
 # My program's generated results
 results
+*.out

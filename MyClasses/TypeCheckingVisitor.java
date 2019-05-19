@@ -503,6 +503,8 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          checkParamType(expType, argu[5], argu[3], null);
       }
 
+      vTableCurMethodParamTypes += (getIRType(expType) + ", ");
+
       return _ret;
    }
 
