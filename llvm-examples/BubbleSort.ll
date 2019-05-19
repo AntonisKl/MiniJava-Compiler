@@ -193,9 +193,13 @@ if46:
 				store i32 %_53, i32* %aux06
 				
 				%_63 = getelementptr i8, i8* %this, i32 8
+
 				%_64 = bitcast i8* %_63 to i32**
+
 				%_65 = load i32*, i32** %_64
+
 				%_66 = load i32, i32* %aux06
+
 				%_54 = load i32, i32 *%_65
 				%_55 = icmp ult i32 %_66, %_54
 				br i1 %_55, label %oob60, label %oob61
@@ -313,14 +317,17 @@ define i32 @BBS.Print(i8* %this) {
 	br label %loop0
 
 loop0:
-	%_3 = load i32, i32* %j
+	%_3 = load i32, i32* %j ; left value of cond
+	
 	%_4 = getelementptr i8, i8* %this, i32 16
 	%_5 = bitcast i8* %_4 to i32*
-	%_6 = load i32, i32* %_5
-	%_7 = icmp slt i32 %_3, %_6
+	%_6 = load i32, i32* %_5 ; right value of cond
+	%_7 = icmp slt i32 %_3, %_6 ; cond
+	
 	br i1 %_7, label %loop1, label %loop2
 
 loop1:
+		; start of body
 		%_17 = getelementptr i8, i8* %this, i32 8
 		%_18 = bitcast i8* %_17 to i32**
 		%_19 = load i32*, i32** %_18
@@ -346,7 +353,8 @@ oob16:
 		%_22 = add i32 %_21, 1
 		store i32 %_22, i32* %j
 		
-		
+		; end of body
+
 		br label %loop0
 
 loop2:

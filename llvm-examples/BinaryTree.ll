@@ -253,6 +253,7 @@ define i1 @Tree.Init(i8* %this, i32 %.v_key) {
 	%v_key = alloca i32
 	store i32 %.v_key, i32* %v_key
 	%_0 = load i32, i32* %v_key
+
 	%_1 = getelementptr i8, i8* %this, i32 24
 	%_2 = bitcast i8* %_1 to i32*
 	store i32 %_0, i32* %_2
@@ -1354,9 +1355,12 @@ define i1 @Tree.RecPrint(i8* %this, i8* %.node) {
 	%_7 = load i8*, i8** %_6
 	%_8 = bitcast i8* %_7 to i1 (i8*)*
 	%_9 = call i1 %_8(i8* %_3)
-	br i1 %_9, label %if0, label %if1
+
+
+	br i1 %_9, label %if0, label %if1 ; cond check
 
 if0:
+		; if body
 		; Tree.RecPrint : 19
 		%_10 = bitcast i8* %this to i8***
 		%_11 = load i8**, i8*** %_10
@@ -1374,10 +1378,11 @@ if0:
 		%_15 = call i1 %_14(i8* %this, i8* %_22)
 		store i1 %_15, i1* %ntb
 		
-		
+		; stop of body
+
 		br label %if2
 
-if1:
+if1: ; else
 
 		store i1 1, i1* %ntb
 		
