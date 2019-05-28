@@ -298,10 +298,20 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          vTableMethodDeclarations = vTableMethodDeclarations.substring(0, vTableMethodDeclarations.length() - 2); // remove last two characters: ", "
       }
 
-      String parentVTableDecleration = classVtableDeclerations.get(id1);
-      String curVtableDecl = "";
+      String parentVTableDecleration = "";
+      String curParentClassName = id1;
+      while (curParentClassName != null) {
+         String curVTableDecl = classVtableDeclerations.get(curParentClassName);
+         if (curVTableDecl != null) {
+            parentVTableDecleration = curVTableDecl;
+            break;
+         }
 
-      curVtableDecl = parentVTableDecleration.replace(id1 + "_vtable", id + "_vtable");
+         curParentClassName = symbols.inheritances.get(curParentClassName);
+      }
+
+      // System.out.println(parentVTableDecleration + "haaaaaaaaaaaaaaaaaa");
+      String curVtableDecl = parentVTableDecleration.replace(id1 + "_vtable", id + "_vtable");
       String parentName = "@" + id1 + ".";
       if (curVtableDecl.contains(parentName)) {
          curVtableDecl = curVtableDecl.replaceAll(parentName, "@" + id + ".");

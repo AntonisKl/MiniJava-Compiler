@@ -242,18 +242,34 @@ public class Symbols {
 		return null; // variable's offset not found
 	}
 
-	public Integer getMethodOffset(String id, String className) {
+	// returns an array: [0] -> method's offset, [1] -> class name in which the method was last declared
+	public String[] getMethodOffsetAndClassName(String id, String className) {
 		String curClassName = className;
 		while (curClassName != null) {
 			Integer curMethodOffset = classesMaps.get(curClassName).methodOffsets.get(id);
 			if (curMethodOffset != null)
-				return curMethodOffset;
+				return new String[] { Integer.toString(curMethodOffset), curClassName };
 
 			curClassName = inheritances.get(curClassName);
 		}
-
 		return null; // method's offset not found
 	}
+
+	// public Integer getParentClassesMethodsNum(String className) {
+	// 	int parentClassesMethodsNum = 0;
+	// 	String curClassName = className;
+	// 	while (curClassName != null) {
+	// 		if (curMethodOffset != null)
+	// 		{
+	// 			System.out.println("offset: " + curMethodOffset + "className: " + curClassName);
+
+	// 			return new String[] { Integer.toString( curMethodOffset), curClassName};
+	// 		}
+	// 		curClassName = inheritances.get(curClassName);
+	// 	}
+	// 	System.out.println("yolo");
+	// 	return null; // method's offset not found
+	// }
 
 	private int getOffsetPerType(String type) {
 		switch (type) {

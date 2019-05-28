@@ -1187,6 +1187,7 @@ loop2:
 define i32 @Tree.Search(i8* %this, i32 %.v_key) {
 	%v_key = alloca i32
 	store i32 %.v_key, i32* %v_key
+	
 	%cont = alloca i1
 	
 	%ifound = alloca i32

@@ -2,6 +2,8 @@ package MyClasses;
 
 import syntaxtree.*;
 import visitor.GJDepthFirst;
+import java.util.Map;
+import java.util.HashMap;
 
 public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     // these are used as defines
@@ -14,11 +16,13 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     final static String INT_ARRAY = "int[]";
 
     int curLocalVarIndex, curArrayAllocLabelIndex = 0, curAndClauseLabelIndex = 0, curOobLabelindex = 0,
-            curLoopLabelIndex = 0, curIfLabelIndex = 0, curMethodCallArgIndex, curTabsNum;
-    String curMethodParams, curMethodVarDeclarations, methodDeclarations, curMethodStatements, curMethodCallArgs,
-            lastObjectType;
+            curLoopLabelIndex = 0, curIfLabelIndex = 0, curTabsNum, nextMethodCallId = 0;
+    String curMethodParams, curMethodVarDeclarations, methodDeclarations, curMethodStatements, lastObjectType;
 
-    boolean storeExpType, retExpMode;
+    Map<Integer, String> methodCallArgs;
+    Map<Integer, Integer> methodCallArgsIndexes;
+
+    boolean storeExpType, retExpMode, inMessageSend, inArrayAssignment, inIntExp;
     // boolean curExpIsRightOfAndExp = false;
 
     Symbols symbols;
@@ -61,6 +65,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     }
 
     String buildLoad(String resultVar, String varToBeLoaded, String IRType) {
+        System.out.println("load var to be loaded: " + varToBeLoaded);
         return buildStatement(resultVar + " = load " + IRType + ", " + IRType + "* " + varToBeLoaded);
     }
 
@@ -120,7 +125,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
     String buildCalloc(String resultVar, String arg1, String arg2) {
         //     %_4 = call i8* @calloc(i32 4, i32 %_3)
-        return buildStatement(resultVar + " = call i8* @calloc(i32 " + arg1 + ", i32 " + arg2);
+        return buildStatement(resultVar + " = call i8* @calloc(i32 " + arg1 + ", i32 " + arg2 + ")");
     }
 
     String buildStore(String fromVar, String toVar, String type) {
@@ -205,9 +210,15 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
             // if (!IRType.equals("i8*")) {
             curMethodStatements += buildBitcast(IRVarName, "%_" + (curLocalVarIndex - 2), "i8*", IRType + "*");
             // }
-            // %_93 = load i8*, i8** %_92
 
-            if (retExpMode == true /*&& (IRType.equals("i8*") || IRType.equals("i32*")*/) {
+            // %_2 = load i32, i32* %_1
+            if (inIntExp) {
+                String prevVarName = IRVarName;
+                IRVarName = getNextLocalVarName();
+                curMethodStatements += buildLoad(IRVarName, prevVarName,IRType);
+            }
+
+            if (retExpMode || inMessageSend /*&& (IRType.equals("i8*") || IRType.equals("i32*")*/) {
                 // %_93 = load i8*, i8** %_92
                 IRVarName = getNextLocalVarName();
                 curMethodStatements += buildLoad(IRVarName, "%_" + (curLocalVarIndex - 2), IRType);
@@ -226,8 +237,8 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         String var1 = getNextLocalVarName(), var2 = getNextLocalVarName(), var3 = getNextLocalVarName();
         int vTableSize = symbols.classesVTableSizes.get(className);
 
-        curMethodStatements += (var1 + " = call i8* @calloc(i32 1, i32 " + symbols.getSizeOfFieldsInBytes(className)
-                + ")\n");
+        curMethodStatements += (var1 + " = call i8* @calloc(i32 1, i32 "
+                + (symbols.getSizeOfFieldsInBytes(className) + 8) + ")\n");
         curMethodStatements += (var2 + " = bitcast i8* " + var1 + " to i8***\n");
         curMethodStatements += (var3 + " = getelementptr [" + vTableSize + " x i8*], [" + vTableSize + " x i8*]* @."
                 + className + "_vtable, i32 0, i32 0\n");
@@ -238,7 +249,6 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
     String createNewArray(String expResult) {
         //     ; start of array allocation
-        //     %_9 = load i32, i32* %sz
         //     %_6 = icmp slt i32 %_9, 0
         //     br i1 %_6, label %arr_alloc7, label %arr_alloc8
 
@@ -254,6 +264,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         //     %_5 = bitcast i8* %_4 to i32*
         //     store i32 %_9, i32* %_5      ; store size of array in the first position of array
         //     ; end of actual array allocation
+        System.out.println("exp name: " + expResult);
 
         String labelName1 = getNextArrayAllocLabelName(), labelName2 = getNextArrayAllocLabelName();
         String[] varNames = new String[5];
@@ -274,18 +285,18 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         // curMethodStatements += ("\t" + varNames[4] + " = bitcast i8* " + varNames[3] + " to i32*");
         // curMethodStatements += ("\tstore i32 " + varNames[0] + ", i32* " + varNames[4] + "\n");
 
-        curMethodStatements += buildLoad(varNames[0], expResult, "i32");
-        curMethodStatements += buildIcmp(varNames[1], varNames[0], "0", "slt", "i32");
+        // curMethodStatements += buildLoad(varNames[0], expResult, "i32");
+        curMethodStatements += buildIcmp(varNames[1], expResult, "0", "slt", "i32");
         curMethodStatements += buildBranch(varNames[1], labelName1, labelName2);
         curMethodStatements += buildLabel(labelName1);
         curMethodStatements += buildThrowOob();
         curMethodStatements += buildBranch(labelName2);
 
         curMethodStatements += buildLabel(labelName2);
-        curMethodStatements += buildAdd(varNames[2], varNames[0], "1");
+        curMethodStatements += buildAdd(varNames[2], expResult, "1");
         curMethodStatements += buildCalloc(varNames[3], "4", varNames[2]);
         curMethodStatements += buildBitcast(varNames[4], varNames[3], "i8*", "i32*");
-        curMethodStatements += buildStore(varNames[0], varNames[4], "i32");
+        curMethodStatements += buildStore(expResult, varNames[4], "i32");
 
         return varNames[4]; // IR variable that has contains the array
     }
@@ -365,19 +376,25 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
             }
             varNames[i] = getNextLocalVarName();
         }
-
+        System.out.println("lookup exp result name: " + expResultArrName);
         curMethodStatements += buildLoad(varNames[0], expResultArrName, "i32*");
+        System.out.println("lookup exp var 0 name: " + varNames[0]);
+
         curMethodStatements += buildLoad(varNames[1], varNames[0], "i32");
         curMethodStatements += buildIcmp(varNames[2], expResultIndex, varNames[1], "ult", "i32");
         curMethodStatements += buildBranch(varNames[2], labelNames[0], labelNames[1]);
         curMethodStatements += buildLabel(labelNames[0]);
         curMethodStatements += buildAdd(varNames[3], expResultIndex, "1");
         curMethodStatements += buildGetElementPtr(varNames[4], varNames[0], varNames[3], "i32");
+        System.out.println("lookup exp var 4 name: " + varNames[4]);
+        System.out.println("lookup exp var 5 name: " + varNames[5]);
+
         curMethodStatements += buildLoad(varNames[5], varNames[4], "i32");
         curMethodStatements += buildBranch(labelNames[2]);
         curMethodStatements += buildLabel(labelNames[1]);
         curMethodStatements += buildThrowOob();
         curMethodStatements += buildBranch(labelNames[2]);
+        curMethodStatements += buildLabel(labelNames[2]);
 
         return varNames[5];
     }
@@ -396,16 +413,29 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
             varNames[i] = getNextLocalVarName();
         }
         // System.out.println("last object type: " + lastObjectType);
+        String[] methodOffsetAndClassName = symbols.getMethodOffsetAndClassName(methodName, lastObjectType); // [0] -> method's offset, [1] -> class name in which the method was last declared
+        int vTableMethodIndex =  Integer.parseInt(methodOffsetAndClassName[0]) / 8;
+        curMethodStatements += "; " + methodName + ": " + vTableMethodIndex + "\n";
 
-        int vTableMethodIndex = symbols.getMethodOffset(methodName, lastObjectType) / 8;
-        // System.out.println("                                                index: " + vTableMethodIndex);
+        // System.out.println("index: " + vTableMethodIndex + ", last object type: " + lastObjectType);
+        // System.out.println("v table: " + symbols.classesVTableMethodTypes.get(lastObjectType));
+
+        String methodSignature = getIRType(symbols.getMethodType(methodName, lastObjectType, null, false)) + " ( i8*, ";
+        // for (Map.Entry<String, String>  : .entrySet()) {
+		//     System.out.println(entry.getKey() + " = " + entry.getValue());
+        // }
+        for (String methodParamType: symbols.classesMaps.get(methodOffsetAndClassName[1]).methodParamTypes.get(methodName)) {
+            methodSignature += (getIRType(methodParamType) + ", ");
+        }
+            methodSignature = methodSignature.substring(0, methodSignature.length() - 2);
+        methodSignature += " )*";
 
         curMethodStatements += buildBitcast(varNames[0], objectVar, "i8*", "i8***");
         curMethodStatements += buildLoad(varNames[1], varNames[0], "i8**");
         curMethodStatements += buildGetElementPtr(varNames[2], varNames[1], vTableMethodIndex + "", "i8*");
         curMethodStatements += buildLoad(varNames[3], varNames[2], "i8*");
         curMethodStatements += buildBitcast(varNames[4], varNames[3], "i8*",
-                symbols.classesVTableMethodTypes.get(lastObjectType).get(vTableMethodIndex));
+                methodSignature);
         // curMethodStatements += buildLoad(varNames[5], varToBeLoaded, IRType)
         curMethodStatements += buildCall(varNames[5], varNames[4],
                 getIRType(symbols.getMethodType(methodName, lastObjectType, null, false)), methodArgs);
@@ -495,6 +525,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
             }
             varNames[i] = getNextLocalVarName();
         }
+        System.out.println("------------------------------------------------------------------->exp name: " +expResultArrName);
 
         curMethodStatements += buildLoad(varNames[0], expResultArrName, "i32*");
         curMethodStatements += buildLoad(varNames[1], varNames[0], "i32");
@@ -508,6 +539,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         curMethodStatements += buildLabel(labelNames[1]);
         curMethodStatements += buildThrowOob();
         curMethodStatements += buildBranch(labelNames[2]);
+        curMethodStatements += buildLabel(labelNames[2]);
 
         return;
     }
@@ -543,6 +575,9 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     */
     public String visit(Goal n, String[] argu) {
         String IRCode = "declare i8* @calloc(i32, i32)\ndeclare i32 @printf(i8*, ...)\ndeclare void @exit(i32)\n\n@_cint = constant [4 x i8] c\"%d\\0a\\00\"\n@_cOOB = constant [15 x i8] c\"Out of bounds\\0a\\00\"\ndefine void @print_int(i32 %i) {\n\t%_str = bitcast [4 x i8]* @_cint to i8*\n\tcall i32 (i8*, ...) @printf(i8* %_str, i32 %i)\n\tret void\n}\n\ndefine void @throw_oob() {\n\t%_str = bitcast [15 x i8]* @_cOOB to i8*\n\tcall i32 (i8*, ...) @printf(i8* %_str)\n\tcall void @exit(i32 1)\n\tret void\n}\n\n";
+
+        methodCallArgs = new HashMap<Integer, String>();
+        methodCallArgsIndexes = new HashMap<Integer, Integer>();
 
         methodDeclarations = "";
         n.f0.accept(this, argu);
@@ -898,10 +933,10 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      */
     // argu[0]: "method", argu[1]: name of method, argu[2]: "class", argu[3]: name of class
     public String visit(ArrayAssignmentStatement n, String[] argu) {
-        // TODO: add check for out of bounds
-
         String _ret = null;
+        inArrayAssignment = true;
         String expResultId = n.f0.accept(this, argu);
+        inArrayAssignment = false;
         n.f1.accept(this, argu);
         String expResultIndex = n.f2.accept(this, argu);
         n.f3.accept(this, argu);
@@ -1115,9 +1150,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> PrimaryExpression()
      */
     public String visit(CompareExpression n, String[] argu) {
+        inIntExp = true;
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String expResult2 = n.f2.accept(this, argu);
+        inIntExp = false;
 
         return buildSimpleExpression(expResult1, "<", expResult2);
     }
@@ -1128,9 +1165,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> PrimaryExpression()
      */
     public String visit(PlusExpression n, String[] argu) {
+        inIntExp = true;
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String expResult2 = n.f2.accept(this, argu);
+        inIntExp = false;
 
         return buildSimpleExpression(expResult1, "+", expResult2);
 
@@ -1142,9 +1181,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> PrimaryExpression()
      */
     public String visit(MinusExpression n, String[] argu) {
+        inIntExp = true;
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String expResult2 = n.f2.accept(this, argu);
+        inIntExp = false;
 
         return buildSimpleExpression(expResult1, "-", expResult2);
     }
@@ -1155,9 +1196,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f2 -> PrimaryExpression()
      */
     public String visit(TimesExpression n, String[] argu) {
+        inIntExp = true;
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String expResult2 = n.f2.accept(this, argu);
+        inIntExp = false;
 
         return buildSimpleExpression(expResult1, "*", expResult2);
     }
@@ -1169,11 +1212,14 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
      * f3 -> "]"
      */
     public String visit(ArrayLookup n, String[] argu) {
+        
         String expResult1 = n.f0.accept(this, argu);
         n.f1.accept(this, argu);
 
+        inIntExp = true;
         String expResult2 = n.f2.accept(this, argu);
         n.f3.accept(this, argu);
+        inIntExp = false;
 
         return buildArrayLookupExpression(expResult1, expResult2);
     }
@@ -1203,9 +1249,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     public String visit(MessageSend n, String[] argu) {
 
         storeExpType = true;
+        inMessageSend = true;
         String expResult = n.f0.accept(this,
                 argu /*new String[] { MESSAGE_SEND, argu[0], argu[1], argu[2], argu[3] }*/);
-        storeExpType = false;
+        inMessageSend = false;
+                storeExpType = false;
         // String objectVar = null, objectType = null;
         // if (expResult.equals("%this")) {
         //     objectVar = expResult;
@@ -1220,6 +1268,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         n.f1.accept(this, argu);
 
         String methodName = n.f2.accept(this, argu);
+        // System.out.println("PRIMARY EXPRESSION IN MESSAGESEND: " + expResult + ", method name: " + methodName);
 
         // System.out.println("method name: " + methodName + "object: " + type);
         // // get method's return type
@@ -1227,10 +1276,15 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
 
         n.f3.accept(this, argu);
 
-        curMethodCallArgs = "i8* " + expResult;
-        curMethodCallArgIndex = 0;
+        // curMethodCallArgs = "i8* " + expResult;
+        // curMethodCallArgIndex = 0;
+        methodCallArgs.put(nextMethodCallId, "i8* " + expResult);
+        methodCallArgsIndexes.put(nextMethodCallId, 0);
+
+        int curMethodId = nextMethodCallId++;
         retExpMode = true;
-        n.f4.accept(this, new String[] { METHOD, argu[1], CLASS, argu[3], METHOD, methodName, CLASS, lastObjectType });
+        n.f4.accept(this, new String[] { METHOD, argu[1], CLASS, argu[3], METHOD, methodName, CLASS, lastObjectType,
+                Integer.toString(curMethodId )});
         retExpMode = false;
         n.f5.accept(this, argu);
 
@@ -1238,7 +1292,7 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         //     return methodType;
 
         // return methodType;
-        return buildMessageSend(expResult, methodName, curMethodCallArgs);
+        return buildMessageSend(expResult, methodName, methodCallArgs.get(curMethodId));
     }
 
     /**
@@ -1252,10 +1306,18 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         String _ret = null;
         String expResult = n.f0.accept(this, argu);
 
-        curMethodCallArgs += buildMethodCallArg(expResult,
-                symbols.getMethodParamType(argu[7], argu[5], curMethodCallArgIndex));
+        // curMethodCallArgs += buildMethodCallArg(expResult,
+        //         symbols.getMethodParamType(argu[7], argu[5], methodCallArgsIndexes.get(curMethodId)));
 
-        curMethodCallArgIndex++;
+        int curMethodId = Integer.parseInt(argu[8]);
+        String curExpResult = buildMethodCallArg(expResult,
+        symbols.getMethodParamType(argu[7], argu[5], methodCallArgsIndexes.get(curMethodId)));
+
+        methodCallArgs.put(curMethodId, methodCallArgs.get(curMethodId) + curExpResult);
+
+        methodCallArgsIndexes.put(curMethodId, methodCallArgsIndexes.get(curMethodId) + 1);
+
+        // curMethodCallArgIndex++;
         n.f1.accept(this, argu);
         return _ret;
     }
@@ -1280,10 +1342,18 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
         n.f0.accept(this, argu);
         String expResult = n.f1.accept(this, argu);
 
-        curMethodCallArgs += buildMethodCallArg(expResult,
-                symbols.getMethodParamType(argu[7], argu[5], curMethodCallArgIndex));
+        // curMethodCallArgs += buildMethodCallArg(expResult,
+        //         symbols.getMethodParamType(argu[7], argu[5], curMethodCallArgIndex));
 
-        curMethodCallArgIndex++;
+        // curMethodCallArgIndex++;
+
+        int curMethodId = Integer.parseInt(argu[8]);
+        String curExpResult = buildMethodCallArg(expResult,
+        symbols.getMethodParamType(argu[7], argu[5], methodCallArgsIndexes.get(curMethodId)));
+
+        methodCallArgs.put(curMethodId, methodCallArgs.get(curMethodId) + curExpResult);
+
+        methodCallArgsIndexes.put(curMethodId, methodCallArgsIndexes.get(curMethodId) + 1);
 
         return _ret;
     }
@@ -1364,7 +1434,11 @@ public class IRCodeGenVisitor extends GJDepthFirst<String, String[]> {
     // argu[0]: METHOD, argu[1]: context method's name, argu[2]: CLASS, argu[3]: context class's name
     // argu[4]: METHOD, argu[5]: called method's name, argu[6]: CLASS, argu[7]: called method's class name
     public String visit(Identifier n, String[] argu) {
-        return n.f0.toString();
+        String id = n.f0.toString();
+        if (inArrayAssignment) {
+            return createIRVarName(id, argu[3], argu[1], false);
+        }
+        return id;
     }
 
     /**

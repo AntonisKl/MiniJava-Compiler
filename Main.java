@@ -65,7 +65,8 @@ class Main {
 					e.printStackTrace(new PrintWriter(sw));
 					typeCheckingErrorMsg = sw.toString();
 				}
-
+				// System.out.println(IRCode);
+				
 				if (typeCheckingErrorMsg == null) { // all went OK
 					System.out.println("Semantic check completed successfully");
 
@@ -87,8 +88,6 @@ class Main {
 				outStream.write(IRCode.getBytes());
 
 				// System.out.println(IRCode);
-
-
 			} catch (ParseException ex) {
 				System.out.println(ex.getMessage());
 			} catch (FileNotFoundException ex) {
