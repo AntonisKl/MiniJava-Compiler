@@ -13,13 +13,11 @@ public class Symbols {
 	public Map<String, String> inheritances; // <class's name, inherited class's name>
 
 	public Map<String, Integer> classesVTableSizes;
-	public Map<String, List<String>> classesVTableMethodTypes; // i32 (i8*,i32)*
 
 	public Symbols() {
 		classesMaps = new LinkedHashMap<String, ClassMaps>(); // LinkedHashMap because we want to maintain the insertion order of elements for printing purposes
 		inheritances = new HashMap<String, String>();
 		classesVTableSizes = new HashMap<String, Integer>();
-		classesVTableMethodTypes = new HashMap<String, List<String>>();
 	}
 
 	// String id: name of the variable

@@ -225,7 +225,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f3.accept(this, new String[] { id });
 
       curOffset = 0;
-      symbols.classesVTableMethodTypes.put(id, new ArrayList<String>());
+      // symbols.classesVTableMethodTypes.put(id, new ArrayList<String>());
       vTableMethodDeclarations = "";
       n.f4.accept(this, new String[] { id });
       if (n.f4.present()) {
@@ -291,7 +291,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          curOffset = 0;
       }
 
-      symbols.classesVTableMethodTypes.put(id, new ArrayList<String>());
+      // symbols.classesVTableMethodTypes.put(id, new ArrayList<String>());
       vTableMethodDeclarations = ""; // declarations of methods that only exist in the current (child) class and NOT in the parent class
       n.f6.accept(this, new String[] { id });
       if (!vTableMethodDeclarations.equals("")) {
@@ -436,7 +436,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          // System.out.println("hi :" + vTableMethodDeclarations);
       }
       // add method's type to list for use in IR code generation
-      symbols.classesVTableMethodTypes.get(argu[0]).add(IRMethodType);
+      // symbols.classesVTableMethodTypes.get(argu[0]).add(IRMethodType);
       // System.out.println(IRMethodType);
       return _ret;
    }
