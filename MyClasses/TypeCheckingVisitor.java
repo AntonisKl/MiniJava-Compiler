@@ -22,9 +22,10 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
 
    // int curMethodParamIndex: curent index of method's parameter -> used for type checking of method's parameters and arguments
    // int curOffset: current offset's value
-   int curMethodParamIndex, curOffset;
+   int curMethodParamIndex, curOffset, curVTableSize;
    String vTableDeclarations, vTableMethodDeclarations, vTableCurMethodParamTypes;
    Map<String, String> classVtableDeclerations; // used when we build the v-table declaration for a child class
+   Map<String, Map<String, String>> classesMethodSignatures;
 
    Symbols symbols;
 
@@ -33,6 +34,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
    public TypeCheckingVisitor(Symbols symbols) {
       this.symbols = symbols;
       classVtableDeclerations = new HashMap<String, String>();
+      classesMethodSignatures = new HashMap<String, Map<String, String>>();
    }
 
    // returns the proper offset according to type argument
@@ -192,6 +194,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f16.accept(this, argu);
       n.f17.accept(this, argu);
 
+      classesMethodSignatures.put(id1, new LinkedHashMap<String, String>());
       String curVtableDecl = "@." + id1 + "_vtable = global [0 x i8*] []";
       vTableDeclarations += curVtableDecl + "\n";
       classVtableDeclerations.put(id1, curVtableDecl);
@@ -226,9 +229,10 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
 
       curOffset = 0;
       // symbols.classesVTableMethodTypes.put(id, new ArrayList<String>());
+      classesMethodSignatures.put(id, new LinkedHashMap<String, String>());
       vTableMethodDeclarations = "";
       n.f4.accept(this, new String[] { id });
-      if (n.f4.present()) {
+      if (!vTableMethodDeclarations.equals("")) {
          vTableMethodDeclarations = vTableMethodDeclarations.substring(0, vTableMethodDeclarations.length() - 2); // remove last two characters: ", "
       }
       int methodsNum = n.f4.size();
@@ -236,7 +240,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f5.accept(this, argu);
       String curVtableDecl = "@." + id + "_vtable = global [" + methodsNum + " x i8*] [" + vTableMethodDeclarations
             + "]";
-            // System.out.println("class: " + id + ", vtable decl: |" + curVtableDecl + "|");
+      // System.out.println("class: " + id + ", vtable decl: |" + curVtableDecl + "|");
       classVtableDeclerations.put(id, curVtableDecl);
       System.out.println("decl non inheritance-----------------------------------------------> " + curVtableDecl + "|");
 
@@ -293,46 +297,83 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          curOffset = 0;
       }
 
+
+
       // symbols.classesVTableMethodTypes.put(id, new ArrayList<String>());
+      classesMethodSignatures.put(id, new LinkedHashMap<String, String>());
+
+      curVTableSize = 0;
+
+      Map<String, String> parentMethodIRSignatures = classesMethodSignatures.get(id1);
+      String parentMethodDeclarations = "";
+      if (parentMethodIRSignatures != null) {
+         for (Map.Entry<String, String> methodEntry : parentMethodIRSignatures.entrySet()) {
+            String methodName = methodEntry.getKey();
+            String methodSignature = methodEntry.getValue();
+            String classNameToPrint = symbols.getLastMethodDeclClass(id, methodName);
+            // System.out.println("class name to print ---------------------------------------------------> " + classNameToPrint);
+            parentMethodDeclarations += "i8* bitcast (" + methodSignature + " @" + classNameToPrint + "." + methodName
+                  + " to i8*), ";
+
+            classesMethodSignatures.get(id).put(methodName,methodSignature);
+            curVTableSize++;
+            // System.out.println(entry.getKey() + " = " + entry.getValue());
+         }
+      }
+
+
       vTableMethodDeclarations = ""; // declarations of methods that only exist in the current (child) class and NOT in the parent class
       n.f6.accept(this, new String[] { id });
       if (!vTableMethodDeclarations.equals("")) {
          vTableMethodDeclarations = vTableMethodDeclarations.substring(0, vTableMethodDeclarations.length() - 2); // remove last two characters: ", "
       }
 
-      String parentVTableDecleration = "";
-      String curParentClassName = id1;
-      while (curParentClassName != null) {
-         String curVTableDecl = classVtableDeclerations.get(curParentClassName);
-         if (curVTableDecl != null) {
-            parentVTableDecleration = curVTableDecl;
-            break;
-         }
+      // String parentVTableDecleration = "";
+      // String curParentClassName = id1;
+      // while (curParentClassName != null) {
+      //    String curVTableDecl = classVtableDeclerations.get(curParentClassName);
+      //    if (curVTableDecl != null) {
+      //       parentVTableDecleration = curVTableDecl;
+      //       break;
+      //    }
 
-         curParentClassName = symbols.inheritances.get(curParentClassName);
+      //    curParentClassName = symbols.inheritances.get(curParentClassName);
+      // }
+
+      // System.out.println(parentVTableDecleration + "    haaaaaaaaaaaaaaaaaa");
+      // String curVtableDecl = parentVTableDecleration.replace(id1 + "_vtable", id + "_vtable");
+      // String parentName = "@" + id1 + ".";
+      // if (curVtableDecl.contains(parentName)) {
+      //    curVtableDecl = curVtableDecl.replaceAll(parentName, "@" + id + ".");
+      // }
+      // int curVTableSize =  curVtableDecl.substring(curVtableDecl.length() - 2).equals("[]") ? 0 : parentVTableDecleration.split("\\),").length;
+      // if (!vTableMethodDeclarations.equals("")) {
+      //    curVtableDecl = curVtableDecl.substring(0, curVtableDecl.length() - 1); // remove last character: "]"
+      //    if (curVTableSize > 0) {
+      //       curVtableDecl+= ", ";
+      //    }
+      //    curVtableDecl += ( vTableMethodDeclarations + "]");
+
+      //    curVTableSize += vTableMethodDeclarations.split("\\),").length;
+      //    // System.out.println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: " + curVtableDecl);
+      //    curVtableDecl = curVtableDecl.replaceAll("([0-9]+) x i8\\*",
+      //          curVTableSize/*vTableMethodDeclarations.split("\\),").length*/ + " x i8*");
+      //          // System.out.println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiii (after): " + curVtableDecl);
+      // }
+
+      
+
+      if (!parentMethodDeclarations.equals("")) {
+         parentMethodDeclarations = parentMethodDeclarations.substring(0, parentMethodDeclarations.length() - 2);
       }
 
-      System.out.println(parentVTableDecleration + "    haaaaaaaaaaaaaaaaaa");
-      String curVtableDecl = parentVTableDecleration.replace(id1 + "_vtable", id + "_vtable");
-      String parentName = "@" + id1 + ".";
-      if (curVtableDecl.contains(parentName)) {
-         curVtableDecl = curVtableDecl.replaceAll(parentName, "@" + id + ".");
+      if (!vTableMethodDeclarations.equals("") && !parentMethodDeclarations.equals("")) {
+         vTableMethodDeclarations = ", " + vTableMethodDeclarations;
       }
-      int curVTableSize =  curVtableDecl.substring(curVtableDecl.length() - 2).equals("[]") ? 0 : parentVTableDecleration.split("\\),").length;
-      if (!vTableMethodDeclarations.equals("")) {
-         curVtableDecl = curVtableDecl.substring(0, curVtableDecl.length() - 1); // remove last character: "]"
-         if (curVTableSize > 0) {
-            curVtableDecl+= ", ";
-         }
-         curVtableDecl += ( vTableMethodDeclarations + "]");
 
-         curVTableSize += vTableMethodDeclarations.split("\\),").length;
-         // System.out.println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: " + curVtableDecl);
-         curVtableDecl = curVtableDecl.replaceAll("([0-9]+) x i8\\*",
-               curVTableSize/*vTableMethodDeclarations.split("\\),").length*/ + " x i8*");
-               // System.out.println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiii (after): " + curVtableDecl);
+      String curVtableDecl = "@." + id + "_vtable = global [" + curVTableSize + " x i8*] [" + parentMethodDeclarations
+            + vTableMethodDeclarations + "]";
 
-      }
       classVtableDeclerations.put(id, curVtableDecl);
       symbols.classesVTableSizes.put(id, curVTableSize); // save v-table's size
       System.out.println("decl-----------------------------------------------> " + curVtableDecl + "|");
@@ -437,10 +478,12 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          curOffset += getOffsetPerType("method");
       }
 
-      String IRMethodType = getIRType(retType) + " (" + vTableCurMethodParamTypes + ")*";
+      String IRMethodSignature = getIRType(retType) + " (" + vTableCurMethodParamTypes + ")*";
+      classesMethodSignatures.get(argu[0]).put(id, IRMethodSignature);
 
       if (foundInheritedClassMethodType == null) {
-         vTableMethodDeclarations += "i8* bitcast (" + IRMethodType + " @" + argu[0] + "." + id + " to i8*), "; // add entry to v-table string
+         curVTableSize++;
+         vTableMethodDeclarations += "i8* bitcast (" + IRMethodSignature + " @" + argu[0] + "." + id + " to i8*), "; // add entry to v-table string
          // System.out.println("hi :" + vTableMethodDeclarations);
       }
       // add method's type to list for use in IR code generation

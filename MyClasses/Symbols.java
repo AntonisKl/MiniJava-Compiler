@@ -186,8 +186,24 @@ public class Symbols {
 		while (curClassName != null) {
 
 			String curMethodType = getMethodType(curClassName, methodName);
+			// System.out.println("cur class name: " + curClassName + ", cur method type: "+ curMethodType + ", method name: " + methodName);
 			if (curMethodType != null)
 				return new String[] { curClassName, curMethodType };
+
+			curClassName = inheritances.get(curClassName);
+		}
+
+		return null; // method's type not found
+	}
+
+	public String getLastMethodDeclClass(String className, String methodName) {
+		String curClassName = className;
+		while (curClassName != null) {
+
+			String curMethodType = getMethodType(curClassName, methodName);
+			// System.out.println("cur class name: " + curClassName + ", cur method type: "+ curMethodType + ", method name: " + methodName);
+			if (curMethodType != null)
+				return curClassName;
 
 			curClassName = inheritances.get(curClassName);
 		}
