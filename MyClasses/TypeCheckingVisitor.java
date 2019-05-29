@@ -192,8 +192,8 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f16.accept(this, argu);
       n.f17.accept(this, argu);
 
-      String curVtableDecl = "@." + id1 + "_vtable = global [0 x i8*] []\n";
-      vTableDeclarations += curVtableDecl;
+      String curVtableDecl = "@." + id1 + "_vtable = global [0 x i8*] []";
+      vTableDeclarations += curVtableDecl + "\n";
       classVtableDeclerations.put(id1, curVtableDecl);
 
       return _ret;
@@ -236,7 +236,9 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
       n.f5.accept(this, argu);
       String curVtableDecl = "@." + id + "_vtable = global [" + methodsNum + " x i8*] [" + vTableMethodDeclarations
             + "]";
+            // System.out.println("class: " + id + ", vtable decl: |" + curVtableDecl + "|");
       classVtableDeclerations.put(id, curVtableDecl);
+      System.out.println("decl non inheritance-----------------------------------------------> " + curVtableDecl + "|");
 
       symbols.classesVTableSizes.put(id, methodsNum); // save v-table's size
 
@@ -310,24 +312,30 @@ public class TypeCheckingVisitor extends GJDepthFirst<String, String[]> {
          curParentClassName = symbols.inheritances.get(curParentClassName);
       }
 
-      // System.out.println(parentVTableDecleration + "haaaaaaaaaaaaaaaaaa");
+      System.out.println(parentVTableDecleration + "    haaaaaaaaaaaaaaaaaa");
       String curVtableDecl = parentVTableDecleration.replace(id1 + "_vtable", id + "_vtable");
       String parentName = "@" + id1 + ".";
       if (curVtableDecl.contains(parentName)) {
          curVtableDecl = curVtableDecl.replaceAll(parentName, "@" + id + ".");
       }
-      int curVTableSize = parentVTableDecleration.split("\\),").length;
-
+      int curVTableSize =  curVtableDecl.substring(curVtableDecl.length() - 2).equals("[]") ? 0 : parentVTableDecleration.split("\\),").length;
       if (!vTableMethodDeclarations.equals("")) {
          curVtableDecl = curVtableDecl.substring(0, curVtableDecl.length() - 1); // remove last character: "]"
-         curVtableDecl += (", " + vTableMethodDeclarations + "]");
+         if (curVTableSize > 0) {
+            curVtableDecl+= ", ";
+         }
+         curVtableDecl += ( vTableMethodDeclarations + "]");
 
          curVTableSize += vTableMethodDeclarations.split("\\),").length;
-
-         curVtableDecl = curVtableDecl.replaceAll("([0-9]+) x i8*",
+         // System.out.println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: " + curVtableDecl);
+         curVtableDecl = curVtableDecl.replaceAll("([0-9]+) x i8\\*",
                curVTableSize/*vTableMethodDeclarations.split("\\),").length*/ + " x i8*");
+               // System.out.println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiii (after): " + curVtableDecl);
+
       }
+      classVtableDeclerations.put(id, curVtableDecl);
       symbols.classesVTableSizes.put(id, curVTableSize); // save v-table's size
+      System.out.println("decl-----------------------------------------------> " + curVtableDecl + "|");
 
       n.f7.accept(this, argu);
       return curVtableDecl;
