@@ -136,6 +136,9 @@ public class Symbols {
 		return classScopeMethodParamTypes.size();
 	}
 
+	// returns the type of the parameter that is in the index posision of the method's signature
+	// className: current class's name
+	// methodName: current method's name
 	public String getMethodParamType(String className, String methodName, int index) {
 		Map<String, List<String>> curClassMethodParamTypes = classesMaps.get(className).methodParamTypes;
 		List<String> classScopeMethodParamTypes = curClassMethodParamTypes.get(methodName);
@@ -181,6 +184,9 @@ public class Symbols {
 		return null; // will not happen
 	}
 
+	// returns the last class's name in the inheritance hierarchy that contains a declaration of the method with name methodName
+	// also returns the type of the method with name methodName
+	// className: current class's name
 	public String[] getLastInheritedMethodType(String className, String methodName) {
 		String curClassName = inheritances.get(className);
 		while (curClassName != null) {
@@ -196,12 +202,13 @@ public class Symbols {
 		return null; // method's type not found
 	}
 
+	// returns the last class's name in the inheritance hierarchy that contains a declaration of the method with name methodName
+	// className: current class's name
 	public String getLastMethodDeclClass(String className, String methodName) {
 		String curClassName = className;
 		while (curClassName != null) {
 
 			String curMethodType = getMethodType(curClassName, methodName);
-			// System.out.println("cur class name: " + curClassName + ", cur method type: "+ curMethodType + ", method name: " + methodName);
 			if (curMethodType != null)
 				return curClassName;
 
@@ -243,6 +250,8 @@ public class Symbols {
 		return returnValue;
 	}
 
+	// returns the stored offset of variable with name: id
+	// className: current class's name
 	public Integer getVarOffset(String id, String className) {
 		String curClassName = className;
 		while (curClassName != null) {
@@ -268,22 +277,6 @@ public class Symbols {
 		}
 		return null; // method's offset not found
 	}
-
-	// public Integer getParentClassesMethodsNum(String className) {
-	// 	int parentClassesMethodsNum = 0;
-	// 	String curClassName = className;
-	// 	while (curClassName != null) {
-	// 		if (curMethodOffset != null)
-	// 		{
-	// 			System.out.println("offset: " + curMethodOffset + "className: " + curClassName);
-
-	// 			return new String[] { Integer.toString( curMethodOffset), curClassName};
-	// 		}
-	// 		curClassName = inheritances.get(curClassName);
-	// 	}
-	// 	System.out.println("yolo");
-	// 	return null; // method's offset not found
-	// }
 
 	private int getOffsetPerType(String type) {
 		switch (type) {
